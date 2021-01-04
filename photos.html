@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="/home/freddy/Escritorio/mvp-citas-cougarsAndMilf/node_modules/bootstrap/dist/css/bootstrap.min.css">
+  <title></title>
+  <style>
+    img{
+      width: 350px;
+      height: 250px;
+    }
+  </style>
+</head>
+
+<body>
+
+<!--Vista en cuadricula/tabla de las fotos del usuario con sus respectivos botones de borrado + un boton de subida
+al final-->
+<!--Me pregunto... si en reealidad seria mejor agregar un boton de eliminacion general, y cuando sea pulsado,
+	el usuario pueda marcar con una casilla cada foto que desea borrar, asi no tendria un exceso de botones de 
+	eliminacion... si, creo que es una mejor opcion de diseño-->
+
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="search">Busqueda</a></li>
+    <li class="breadcrumb-item"><a href="/myProfile">Mi perfil</a></li>
+    <li class="breadcrumb-item"><a href="#">Configuracion de la cuenta</a></li>
+    <li class="breadcrumb-item"><a href="/log-out">Salir</a></li>
+  </ol>
+</nav>
+
+<table class="table">
+  <tbody>
+    <!--Fotos-->
+  </tbody>
+</table>
+<form action="/uploadPhoto" method="post" enctype="multipart/form-data">
+  <input  class="form-control" type="file" name="photo">
+  <button type="submit" class="btn btn-primary">Enviar foto</button>
+</form>
+<button id="eliminar" class="btn btn-danger" type="button">Eliminar</button>
+<button id="fotoDePerfil" class="btn-success" type="button">Establecer foto de perfil</button>
+
+<script>
+  function formatearSrc(src){ //Esta funcion se encarga de formatear el src de las imagenes con el fin de enviar solo el nombre de la imagen.
+    //El nombre esta despues del cuarto '/'
+    let name='', contador=0;
+    for (let i=0; i<src.length; i++){
+      if (src[i]==='/'){
+        contador++;
+      }
+      if (src[i]!=='/' && contador===4){
+        name+=src[i];
+      }
+    }
+    return name;
+  }
+  /*La siguiente funcion verificara si alguna de las fotos tiene marco. Si una foto i ya lo tiene, entonces se le borrara
+  y se le agregara el marco a la foto recibida como segundo parametro. En caso de no haber fotos con marcos, se procede de la 
+  misma manera.
+  */
+  function fotoSeleccionada(arrayFotosDePerfil, fotoASeleccionar){
+    for (let i=0; i<arrayFotosDePerfil.length; i++){
+      if (arrayFotosDePerfil[i].style.borderColor='green'){ //Son tres parametros de border, pero enrealidad con confirmar uno es suficiente.
+        arrayFotosDePerfil[i].style.borderColor=null;
+        arrayFotosDePerfil[i].style.borderWidth=null;
+        arrayFotosDePerfil[i].style.borderStyle=null;
+      }
+    }
+    fotoASeleccionar.style.borderColor='green';
+    fotoASeleccionar.style.borderWidth='5px';
+    fotoASeleccionar.style.borderStyle='solid';
+  }
+  //Codigo que sirve para agrandar una imagen cuando el usuario haga click en ella:
+  let photos=document.querySelectorAll('img');
+  photos.forEach(photo=>{
+    photo.addEventListener('click', ()=>{
+      
+    });
+  });
+  //Codigo para establecer la foto de perfil.
+  let fotoDePerfil=document.getElementById('fotoDePerfil');
+  fotoDePerfil.addEventListener('click', ()=>{
+    let fotos=document.querySelectorAll('img');
+    fotos.forEach(foto=>{
+      foto.addEventListener('click', ()=>{
+        fotoSeleccionada(fotos, foto);
+      });
+    });
+    let confirmarFotoDePerfil=document.createElement('button');
+    confirmarFotoDePerfil.textContent='Confirmar foto de perfil';
+    document.querySelector('body').appendChild(confirmarFotoDePerfil);
+    confirmarFotoDePerfil.addEventListener('click', async ()=>{
+      let fotos=document.querySelectorAll('img');
+      let i=0, flag=false, nuevaFotoDePerfil;
+      while (i<fotos.length && !flag){
+        if (fotos[i].style.borderColor==='green'){
+          flag=true;
+          nuevaFotoDePerfil={src: formatearSrc(fotos[i].src)};
+        }
+        i++;
+      }
+      if (flag){
+        /*Envio una solicitud para establecer la foto de perfil. Procedere de la siguiente manera:
+        En formato json envio el src de la imagen. El servidor se encargara de añadir al src una "etiqueta"
+        que servira para identificarla como la foto de perfil. La etiqueta sera "etiquetaFotoDePerfil!x#" y tan solo se
+        sumara al src(src+etiqueta). Pero claro, antes debo asegurarme de borrar la etiqueta de la anterior foto de perfil.
+        Si no hay etiqueta establecida, entonces procedere de la misma manera.*/
+        let request=await fetch('/change-profile-photo', {
+        method: 'put',
+        headers: {'Content-Type': 'application/json'}, 
+        body: JSON.stringify(nuevaFotoDePerfil)});
+        let response=await request.json();
+        if (response.message==='Foto de perfil cambiada!'){
+          alert('Foto de perfil cambiada!');
+        } else{
+          alert('Error, intentelo de nuevo');
+        }
+      }
+    });
+  });
+  //Ahora el codigo de borrado de fotos...
+  let botonDeEliminacion=document.getElementById('eliminar');
+  botonDeEliminacion.addEventListener('click', async ()=>{
+    //Seleccionare todos los inputs para verficiar si ya han sido creados checkboxs...
+    let inputs=document.querySelectorAll('input'), bandera=false;
+    for (let i=0; i<inputs.length; i++){
+      if (inputs[i].type==='checkbox'){
+        bandera=true;
+      }
+    }
+    if (!bandera){
+      let table=document.querySelector('table'), cuerpoTabla=table.firstElementChild, filas=cuerpoTabla.children;
+      for (let i=0; i<filas.length; i++){
+        let filaActual=filas[i], columnas=filaActual.children;
+        for (let j=0; j<columnas.length; j++){
+          let casilla=document.createElement('input');
+          casilla.type='checkbox';
+          columnas[j].appendChild(casilla);
+        }
+      }
+      let botonConfirmar=document.createElement('button');
+      botonConfirmar.textContent='Confirmar';
+      document.querySelector('body').appendChild(botonConfirmar);
+      botonConfirmar.addEventListener('click', async ()=>{
+        /*Este codigo tendra la funcion de seleccionar las imagenes que el usuario selecciono para ser eliminadas.
+        Se enviara al servidor en formato json las rutas de las imagenes para que el servidor se encargue de borrarlas.*/
+        let fotos=document.querySelectorAll('img'), inputs=document.querySelectorAll('input'), checkboxes=[];
+        inputs.forEach(input=>{
+          if (input.type==='checkbox'){
+            checkboxes.push(input);
+          }
+        });
+        let fotosAEliminar=[];
+        for (let i=0; i<checkboxes.length; i++){
+          if (checkboxes[i].checked){
+            fotosAEliminar.push(formatearSrc(fotos[i].src));
+          }
+        }
+        let objetoFotos={
+          fotos: fotosAEliminar
+        };
+        let peticion=await fetch('/photos', {
+          method:'delete', 
+          headers: {'Content-Type': 'application/json'}, 
+          body: JSON.stringify(objetoFotos)
+        });
+        let respuesta=await peticion.json();
+        if (respuesta.message==='Operacion fallida, intentelo de nuevo.'){
+          alert('Operacion fallida, intentelo de nuevo.');
+        } else{
+          alert('Fotos borradas!');
+        }
+      });
+      let botonEliminar=document.createElement('button');
+      botonEliminar.textContent='Cancelar';
+      document.querySelector('body').appendChild(botonEliminar);
+      botonEliminar.addEventListener('click', ()=>{
+        //Al ser los checkbox anexados como hijos de las imagenes, entonces se procede a eliminarlos.
+        let table=document.querySelector('table'), cuerpoTabla=table.firstElementChild, filas=cuerpoTabla.children;
+        for (let i=0; i<filas.length; i++){
+          console.log(filas);
+          let filaActual=filas[i], columnas=filaActual.children;
+          for (let j=0; j<columnas.length; j++){
+            columnas[j].removeChild(columnas[j].children[1]); //El checkbox es el segundo hijo de la columa de la fila.
+          }
+          document.querySelector('body').removeChild(botonConfirmar);
+          document.querySelector('body').removeChild(botonEliminar);
+        }
+      });
+    }
+  });
+</script>
+
+</body>
+</html>
+

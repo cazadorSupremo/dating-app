@@ -1,0 +1,2 @@
+Es bastante facil, simplemente envio todos los datos de nuevo, independientemente de si
+el usuario los modifico o no, y actualizo esos elementos en la base de datos.

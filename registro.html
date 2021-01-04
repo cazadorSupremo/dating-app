@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title></title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <link rel="stylesheet" href="/home/freddy/Escritorio/mvp-citas-cougarsAndMilf/node_modules/bootstrap/dist/css/bootstrap.min.css">
+  <style>
+    #formulario{
+      width: 400px;
+    }
+  </style>
+</head>
+
+<body>
+	<h2>"nombre del sitio"</h2>
+	<h3>Registro</h3>
+	<form method="post" action="/signin">
+
+    <label for="inputEmail4">Email</label>
+    <input type="email" class="form-control" name="email">
+
+    <label for="inputPassword4">Username</label>
+    <input type="text" class="form-control" name="username">
+
+    <label for="inputPassword4">Password</label>
+    <input type="password" class="form-control" name="password">
+
+    <label for="repetirContraseña">Repita la contraseña</label>
+    <input type="password" class="form-control" name="repeatPassword">
+
+
+    <label for="nombre">Nombre</label>
+    <input type="text" class="form-control" name="name">
+
+    <label for="apellido">Apellido</label>
+    <input type="text" class="form-control" name="lastName">
+
+    <label for="hombre">Hombre</label>
+    <input type="radio" name="sex" value="man">
+    
+
+    <label for="mujer">Mujer</label>
+    <input type="radio" name="sex" value="woman">
+    
+    <label for="age">Edad</label>
+    <select name="age" id="age" class="form-control"> <!--Para seleccionar edad obligatoriamente debes seleccionar antes sexo-->
+    </select>
+
+    <label for="pais">Pais</label>
+    <select name="country" id="country" class="form-control">
+    </select>
+    
+    <button type="submit" class="btn btn-success">Registrarse</button>
+</form>
+
+<script>
+  let paises=['Argentina', 'Bolivia', 'Brasil', 'Canada', 'Chile', 'Colombia', 'Costa Rica', 'Ecuador', 'España', 'Estados Unidos', 'Inglaterra', 'Mexico', 'Panama', 'Paraguay', 'Peru', 'Uruguay', 'Venezuela'];
+  function removerNodosHijos(nodoPadre){
+    while (nodoPadre.children.length>0){
+      nodoPadre.removeChild(nodoPadre.lastChild);
+    }
+  }
+  let seleccionadorPaises=document.getElementById('country');
+  for (let i=0; i<paises.length; i++){
+    let pais=document.createElement('option');
+    pais.textContent=paises[i];
+    seleccionadorPaises.appendChild(pais);
+  }
+  let sexoElegido=document.getElementsByName('sex');
+  sexoElegido.forEach(checkbox=>
+    checkbox.addEventListener('click', ()=>{
+    let seleccionadorEdad=document.getElementById('age');
+    removerNodosHijos(seleccionadorEdad);
+    if (checkbox.value==='man'){
+      //La edad apropiada para un "cub" es de 18 a 35 años, segun yo...
+      for (let i=18; i<=35; i++){
+        let opcion=document.createElement('option');
+        opcion.textContent=i
+        seleccionadorEdad.appendChild(opcion);
+      }
+    } else {
+      for (let i=35; i<=90; i++){
+        let opcion=document.createElement('option');
+        opcion.textContent=i
+        seleccionadorEdad.appendChild(opcion);
+      }
+    }
+  })
+  );
+</script>
+
+</body>
+</html>

@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <link rel="stylesheet" href="/home/freddy/Escritorio/mvp-citas-cougarsAndMilf/node_modules/bootstrap/dist/css/bootstrap.min.css">
+  <meta charset="utf-8">
+  <title></title>
+</head>
+
+<body>
+
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="search">Busqueda</a></li>
+    <li class="breadcrumb-item"><a href="/myProfile">Mi perfil</a></li>
+    <li class="breadcrumb-item"><a href="#">Configuracion de la cuenta</a></li>
+    <li class="breadcrumb-item"><a href="/log-out">Salir</a></li>
+  </ol>
+</nav>
+
+<a href="/myProfile">Regresar</a>
+  <textarea id="header" maxlength="50">Encabezado</textarea>
+  <button type="button" class="btn btn-success" id="update">Actualizar</button>
+  <table id="datos" class="table">
+    <tr>
+      <th>Tipo de cuerpo</th>
+      <td>
+        <select class="form-control" id="tipoDeCuerpo">
+          <option>Delgado</option>
+          <option>Promedio</option>
+          <option>Sobrepeso</option>
+      	</select>
+      </td>
+    </tr>
+    <tr>
+      <th>Altura</th>
+      <td>
+      	<div>
+      	<input id="altura" type="range" class="form-control-range" min="1.20" max="2.10" step="0.01" onchange="updateHeigth(this.value);">
+      	<p id="valorAltura"></p>
+        </div>
+      </td>
+    </tr>
+    <tr>
+      <th>Grupo etnico</th>
+      <td>
+         <select class="form-control" id="grupoEtnico">
+          <option>Blanco</option>
+          <option>Afrodescendiente</option>
+          <option>Asiatico</option>
+          <option>Hispano/latino</option>
+          <option>Indio</option>
+          <option>Mestizo</option>
+        </select>
+      </td>
+    </tr>
+    <tr>
+      <th>Estado civil</th>
+      <td>
+      	<select class="form-control" id="estadoCivil">
+          <option>Soltero</option>
+          <option>Casado</option>
+          <option>Divorciado</option>
+          <option>Viudo</option>
+        </select>
+      </td>
+    </tr>
+    <tr>
+      <th>Hijos</th>
+      <td>
+        <div>
+        <input class="form-check-input" type="radio" name="hijos" value="si" checked>
+        <label class="form-check-label" for="si">Si</label>
+        </div>
+        <div>
+        <input class="form-check-input" type="radio" name="hijos" value="no">
+        <label class="form-check-label" for="no">No</label>
+        </div>
+      </td>
+    </tr>
+    <tr>
+      <th>Situacion de vivienda</th>
+      <td>
+        <select class="form-control" id="situacionDeVivienda">
+          <option>Vivo solo</option>
+          <option>Vivo acompañado</option>
+        </select>
+      </td>
+    </tr>
+    <tr>
+      <th>Nivel de estudios</th>
+      <td>
+        <select class="form-control" id="nivelDeEstudios">
+          <option>Educacion primaria</option>
+          <option>Educacion secundaria</option>
+          <option>Universidad</option>
+          <option>Postgrado/Doctorado</option>
+        </select>
+      </td>
+    </tr>
+    <tr>
+      <th>Trabajas</th>
+      <td>
+        <div>
+        <input class="form-check-input" type="radio" name="trabajas" value="si" checked>
+        <label class="form-check-label" for="si">Si</label>
+        </div>
+        <div>
+        <input class="form-check-input" type="radio" name="trabajas" value="no">
+        <label class="form-check-label" for="no">No</label>
+        </div>
+      </td>
+    </tr>
+    <tr>
+      <th>Fumas</th>
+      <td>
+        <div>
+        <input class="form-check-input" type="radio" name="fumas" value="si" checked>
+        <label class="form-check-label" for="si">Si</label>
+        </div>
+        <div>
+        <input class="form-check-input" type="radio" name="fumas" value="no">
+        <label class="form-check-label" for="no">No</label>
+        </div>
+      </td>
+    </tr>
+    <tr>
+      <th>Bebes</th>
+      <td>
+        <div>
+        <input class="form-check-input" type="radio" name="bebes" value="si" checked>
+        <label class="form-check-label" for="si">Si</label>
+        </div>
+        <div>
+        <input class="form-check-input" type="radio" name="bebes" value="no">
+        <label class="form-check-label" for="no">No</label>
+        </div>
+      </td>
+    </tr>
+</table>
+
+<textarea id="descripcion" maxlength="300">Descripcion</textarea>
+
+<script>
+  function updateHeigth(x){
+    document.getElementById('valorAltura').textContent=x+' m';
+  }
+  function verficarValorElegidoDeBotonesDeRadio(listaDeBotones){
+    if (listaDeBotones[0].checked){
+      return 1; //Si
+    } else{
+      return 0; //No
+    }
+  }
+  let update=document.getElementById('update');
+  update.addEventListener('click', async ()=>{
+    let datosActualizados={
+      //Como puedo enviar el id del usuario, ese que me servira para hacer la respectiva consulta en la base de datos?
+      encabezado: document.getElementById('header').value,
+      tipoDeCuerpo: document.getElementById('tipoDeCuerpo').value,
+      altura: document.getElementById('altura').value,
+      grupoEtnico: document.getElementById('grupoEtnico').value,
+      estadoCivil: document.getElementById('estadoCivil').value,
+      hijos: verficarValorElegidoDeBotonesDeRadio(document.getElementsByName('hijos')),
+      situacionDeVivienda: document.getElementById('situacionDeVivienda').value,
+      nivelDeEstudios: document.getElementById('nivelDeEstudios').value,
+      trabaja: verficarValorElegidoDeBotonesDeRadio(document.getElementsByName('trabajas')),
+      fuma: verficarValorElegidoDeBotonesDeRadio(document.getElementsByName('fumas')),
+      bebe: verficarValorElegidoDeBotonesDeRadio(document.getElementsByName('bebes')),
+      descripcion: document.getElementById('descripcion').value 
+    };
+    let actualizacionDeDatos=await fetch('/edit-profile', {method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify
+    (datosActualizados)});
+    let mensaje=await actualizacionDeDatos.json();
+    if (mensaje.message==='Actualizacion exitosa'){
+      alert('Actualizacion exitosa');
+    } else{
+      alert('Error, intentelo de nuevo');
+    }
+  });
+</script>
+</html>

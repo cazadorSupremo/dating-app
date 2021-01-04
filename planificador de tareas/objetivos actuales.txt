@@ -1,0 +1,10 @@
+-Lograr que el usuario puede seleccionar su foto de perfil. //Logrado!
+-Mejorar la interfaz/manera en la que el usuario seleccione su foto de perfil.
+-Lograr que la plantilla del perfil del usuario se envie con la foto de su perfil, o, si no la tiene, su avatar
+(masculino o femenino). //Parcialmente logrado.
+-Lo mismo que la linea anterior pero con la banderita de su pais.
+-Hacer que aparezcan todos los perfiles de usuarios registrados del sexo opuesto al usuario solcitante
+ en formato tabla de 2 usuarios por fila cuando el usuario haga busqueda.
+-Cuando el usuario haga click en el perfil del otro usuario mostrado en la busqueda, mostrarle el perfil con los datos del usuario
+solicitado. 
+-Mostrar las fotos del perfil del otro usuario al usuario solicitante (esto se relaciona con el punto anterior).

@@ -1,0 +1,8 @@
+En comun:
+delgado, promedio, sobrepreso.
+
+Hombres:
+esbelto, atletico, ¿muy musculoso?.
+
+Mujeres:
+con curvas, voluptuosa, ¿muy voluptuosa?
