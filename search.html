@@ -17,22 +17,20 @@
     <li class="breadcrumb-item"><a href="/log-out">Salir</a></li>
   </ol>
 </nav>
-<form action="/users" method="get">
+<!--<form action="/users" method="get">-->
 <label for="customRange1">Rango de edad</label>
-<input type="range" class="custom-range" id="customRange1" name='edad' min="35" max="90" step="1" onchange="updateAge(this.value);">
+<input type="range" class="custom-range" id="age" name='edad' min="35" max="90" step="1" onchange="updateAge(this.value);">
 <p id="valorEdad"></p>
 <select class="form-control" id="country" name="pais">
   <option>Todos los paises</option>
 </select>
-<input type="checkbox">
+<input id="online" type="checkbox">
  <label>Online</label><br>
-<button type="submit" class="btn btn-primary">Buscar</button>
-</form>
+<button type="submit" class="btn btn-primary" id="search">Buscar</button>
+<!--</form>-->
 
   <table>
-    <tbody>
-      <!--Perfiles de usarios-->
-    </tbody>
+   
   </table>
 
   <nav aria-label="Page navigation example">
@@ -42,7 +40,6 @@
     <li class="page-item"><a class="page-link" href="#">2</a></li>
     <li class="page-item"><a class="page-link" href="#">3</a></li>
     <li class="page-item"><a class="page-link" href="#">Next</a></li>-->
-    #indices#
   </ul>
 </nav>
 
@@ -52,11 +49,36 @@
   function updateAge(x){
     document.getElementById('valorEdad').textContent=x;
   }
+  function eliminarNodosHijos(nodoPadre){
+    while (nodoPadre.firstChild){
+      nodoPadre.removeChild(nodoPadre.firstChild);
+    }
+  }
   let paises=['Argentina', 'Bolivia', 'Brasil', 'Canada', 'Chile', 'Colombia', 'Costa Rica', 'Ecuador', 'España', 'Estados Unidos', 'Inglaterra', 'Mexico', 'Panama', 'Paraguay', 'Peru', 'Uruguay', 'Venezuela'];
   function removerNodosHijos(nodoPadre){
     while (nodoPadre.children.length>0){
       nodoPadre.removeChild(nodoPadre.lastChild);
     }
+  }
+  function agregarEventoConsultaPerfilDeUsuario(perfil, username){
+  	console.log('agregado');
+    perfil.addEventListener('click', async ()=>{
+      console.log('Evento!');
+      let objetoUsuario={
+      	userName: username
+      };
+      let request=await fetch('/userProfile', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify
+      (objetoUsuario)});
+      let response=await request.text();
+      document.body.innerHTML=response;
+      /*Que extraño... Por alguna razon, el enfoque de la vista y consulta de perfiles de usuario esta tomando la logica 
+      de una sola pagina, y este codigo lo demuestra... Debe haber una manera de enviar la pagina como una ruta
+      externa, no me gustaria tener que usar react y redux...
+      Creo que el enfoque alternativo seria que los perfiles fueran un link en si mismos, al pulsar ese link, se 
+      envia el nombre del usuario (de alguna manera) y se muestra el perfil del usuario, separado de la busqueda.
+      Si, este "enfoque hibrido" puede funcionar, las SPA parecen dificiles de hacer, aunque son mas modernas, ya tendre
+      tiempo de aprender react y redux...*/
+    });
   }
   let seleccionadorPaises=document.getElementById('country');
   for (let i=0; i<paises.length; i++){
@@ -64,6 +86,94 @@
     pais.textContent=paises[i];
     seleccionadorPaises.appendChild(pais);
   }
+  let botonDeBusqueda=document.getElementById('search'), indices;
+  botonDeBusqueda.addEventListener('click', async ()=>{
+    if (document.querySelector('table').children.length>0){
+      eliminarNodosHijos(document.querySelector('table'));
+    }
+    let parametrosDeBusqueda={
+      age: document.getElementById('age').value,
+      country: document.getElementById('country').value,
+      online: document.getElementById('online').value
+    };
+    let request=await fetch('/users',{method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify
+    (parametrosDeBusqueda)});
+    let response=await request.json();
+    if (response.profiles.rows.length===0){
+      alert('No se encontraron usuarios.');
+    } else{
+      let fila=document.createElement('tr'), tbody=document.createElement('tbody'), contador=0, contadorDePaginas=0;
+      for (let i=0; i<response.profiles.rows.length; i++){
+        if (i===response.profiles.rows.length-1){
+          let columna=document.createElement('td'), foto=document.createElement('img'), pais=document.createElement('p'),
+          nombreDeUsuario=document.createElement('p'), edad=document.createElement('p');
+          foto.src=`${response.profilesPhotos[i]}`;
+          columna.appendChild(foto);
+          pais.textContent=`${response.profiles.rows[i].country}`;
+          columna.appendChild(pais);
+          nombreDeUsuario.textContent=`${response.profiles.rows[i].username}`;
+          columna.appendChild(nombreDeUsuario);
+          edad.textContent=`${response.profiles.rows[i].age}`;
+          columna.appendChild(edad);
+          agregarEventoConsultaPerfilDeUsuario(columna, nombreDeUsuario.textContent);
+          fila.appendChild(columna);
+          tbody.appendChild(fila);
+        } else if(contador===2){
+          contador=0;
+          tbody.appendChild(fila);
+          fila=document.createElement('tr');
+          let columna=document.createElement('td'), foto=document.createElement('img'), pais=document.createElement('p'),
+          nombreDeUsuario=document.createElement('p'), edad=document.createElement('p');
+          foto.src=`${response.profilesPhotos[i]}`;
+          columna.appendChild(foto);
+          pais.textContent=`${response.profiles.rows[i].country}`;
+          columna.appendChild(pais);
+          nombreDeUsuario.textContent=`${response.profiles.rows[i].username}`;
+          columna.appendChild(nombreDeUsuario);
+          edad.textContent=`${response.profiles.rows[i].age}`;
+          columna.appendChild(edad);
+          agregarEventoConsultaPerfilDeUsuario(columna, nombreDeUsuario.textContent);
+          fila.appendChild(columna);
+          contador++;
+        } else{
+          let columna=document.createElement('td'), foto=document.createElement('img'), pais=document.createElement('p'),
+          nombreDeUsuario=document.createElement('p'), edad=document.createElement('p');
+          foto.src=`${response.profilesPhotos[i]}`;
+          columna.appendChild(foto);
+          pais.textContent=`${response.profiles.rows[i].country}`;
+          columna.appendChild(pais);
+          nombreDeUsuario.textContent=`${response.profiles.rows[i].username}`;
+          columna.appendChild(nombreDeUsuario);
+          edad.textContent=`${response.profiles.rows[i].age}`;
+          columna.appendChild(edad);
+          agregarEventoConsultaPerfilDeUsuario(columna, nombreDeUsuario.textContent);
+          fila.appendChild(columna);
+          contador++;
+        }
+      }
+      let indice=document.createElement('li');
+      indice.textContent='1';
+      document.querySelector('table').appendChild(tbody);
+      document.querySelector('ul').appendChild(indice);
+      indice.addEventListener('click', ()=>{
+      });
+      /*Podria solucionar el problema de los indices de la siguiente forma:
+       Una vez recibidos los datos json, renderizo los perfiles respectivos del indice 1. Los indices se generaran dinamicamente
+       en funcion de la cantidad de perfiles recibidos. Si por ejemplo, recibo 200 perfiles, y los voy a dividir en 40, entonces
+       me quedaria 5 indices, donde cada uno muestra 40. Entonces, el indice 1 muestra los primeros 40 (1..40), el segundo
+       los perfiles del 41..80, y asi sucesivamente. Cabe descatacar que a cada indice le debo agregar el respectivo evento que
+       renderice los perfiles si el usuario hace click en ellos, usando las filas guardadas en la memoria en formato json, sin necesidad
+       de consultar al servidor de nuevo. 
+       Para la vista del perfil de cada usuario... En este caso me convendria enviar el perfil renderizados desde el lado del servidor,
+       ya que no estoy usando un framework de aplicacions de una sola pagina(como react) para mantener el estado, entonces, si un 
+       usuario decide visitar un perfil y luego volver, no obtendra sus resultados busqueda, si no la pagina anterior a los resultados
+       de busqueda, ya que en la busqueda solo esta cambiando la vista dinamicamente utilizando los datos json recibidos del servidor.
+       Entonces, tendre que añadir dinamicamente a cada perfil creado dinamicamente un evento de consulta de perfil, que se comunique 
+       con el servidor enviando hacia la ruta que esta por definir el atributo del usuario consultado (en este caso el username), obtenido
+       de la columna (td) como hijo (un elemento p en este caso).
+       */
+    }
+  });
 </script>
 </body>
 </html>
