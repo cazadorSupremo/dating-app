@@ -317,32 +317,28 @@ app.get('/search', (req, res)=>{
   //Envio junto con todos los usuarios registrados. Luego el usuario decide sus parametros de busqueda.
   res.sendFile('/home/freddy/Escritorio/mvp-citas-cougarsAndMilf/search.html');
 });
-app.post('/users', async (req, res)=>{
+app.get('/users', async (req, res)=>{ 
    /*Consulto el sexo del usuario para luego consultar todos los usuarios del sexo opuesto.
   Los mostrare en filas de 3. Cada perfil de usuario tendra como presentacion su banderita, estado, foto de perfil (avatar si no la tiene),
   su nombre de usuario y su edad. Si el usuario hace click en alguno de los perfiles, ira directamente al perfil indicado con todos 
   sus datos. Los parametros de busqueda seran el rango de edad, el pais y si estan online. En caso de que sean todos los paises,
   no incluyo eso  parametro en la consulta a la base de datos.
-  */
+  Cada perfil sera un link en si mismo (a href) y lo unire junto a un parametro(en este caso el nombre de usuario) para que el usuario
+  solicitante pueda ver el respectivo perfil...*/
   let sexo=await client.query(`SELECT sex FROM users WHERE email='${req.user}'`), perfilesDeUsuarios;
-  if (req.body.country==='Todos los paises'){
-    perfilesDeUsuarios=await client.query(`SELECT * FROM users WHERE sex='${!sexo.rows[0].sex}' AND age<='${req.body.age}'`);
+  if (req.query.pais==='Todos los paises'){
+    perfilesDeUsuarios=await client.query(`SELECT * FROM users WHERE sex='${!sexo.rows[0].sex}' AND age<='${req.query.edad}'`);
   } else{
-    perfilesDeUsuarios=await client.query(`SELECT * FROM users WHERE sex='${!sexo.rows[0].sex}' AND age<='${req.body.age}'
-    AND country='${req.body.country}'`);
+    perfilesDeUsuarios=await client.query(`SELECT * FROM users WHERE sex='${!sexo.rows[0].sex}' AND age<='${req.query.edad}'
+    AND country='${req.query.pais}'`);
   }
-  let fotosDePerfilUsuarios=[];
-  for (let i=0; i<perfilesDeUsuarios.rows.length; i++){
-    fotosDePerfilUsuarios.push(await obtenerFotoPefilUsuario(perfilesDeUsuarios.rows[i].email));
-  }
-  res.json({profiles: perfilesDeUsuarios, profilesPhotos: fotosDePerfilUsuarios});
-  /*let plantilla=await fs.readFile('/home/freddy/Escritorio/mvp-citas-cougarsAndMilf/search.html', 'utf8');
+  let plantilla=await fs.readFile('/home/freddy/Escritorio/mvp-citas-cougarsAndMilf/search.html', 'utf8');
   let fila=`<tr>`, datos='', contador=0;
   for (let i=0; i<perfilesDeUsuarios.rows.length; i++){
   	let srcFotoDePerfil=await obtenerFotoPefilUsuario(perfilesDeUsuarios.rows[i].email);
     if (i===perfilesDeUsuarios.rows.length-1){
-      fila+=`<td><img src="${srcFotoDePerfil}"><p>${perfilesDeUsuarios.rows[i].country}</p><p>${perfilesDeUsuarios.rows[i].username}</p>
-      <p>${perfilesDeUsuarios.rows[i].age}</p></td>`;
+      fila+=`<td><a href="/userProfile?userName=${perfilesDeUsuarios.rows[i].username}"><img src="${srcFotoDePerfil}"><p>${perfilesDeUsuarios.rows[i].country}</p><p>${perfilesDeUsuarios.rows[i].username}</p>
+      <p>${perfilesDeUsuarios.rows[i].age}</p></a></td>`;
       fila+='</tr>';
       datos+=fila;
     } else if(contador===2){
@@ -350,27 +346,27 @@ app.post('/users', async (req, res)=>{
       fila+='</tr>';
       datos+=fila;
       fila=`<tr>`;
-      fila+=`<td><img src="${srcFotoDePerfil}"><p>${perfilesDeUsuarios.rows[i].country}</p><p>${perfilesDeUsuarios.rows[i].username}</p>
-      <p>${perfilesDeUsuarios.rows[i].age}</p></td>`;
+      fila+=`<td><a href="/userProfile?userName=${perfilesDeUsuarios.rows[i].username}"><img src="${srcFotoDePerfil}"><p>${perfilesDeUsuarios.rows[i].country}</p><p>${perfilesDeUsuarios.rows[i].username}</p>
+      <p>${perfilesDeUsuarios.rows[i].age}</p></a></td>`;
       contador++;
     } else{
-      fila+=`<td><img src="${srcFotoDePerfil}"><p>${perfilesDeUsuarios.rows[i].country}</p><p>${perfilesDeUsuarios.rows[i].username}</p>
-      <p>${perfilesDeUsuarios.rows[i].age}</p></td>`;
+      fila+=`<td><a href="/userProfile?userName=${perfilesDeUsuarios.rows[i].username}"><img src="${srcFotoDePerfil}"><p>${perfilesDeUsuarios.rows[i].country}</p><p>${perfilesDeUsuarios.rows[i].username}</p>
+      <p>${perfilesDeUsuarios.rows[i].age}</p></a></td>`;
       contador++;
     }
   }
-  plantilla=plantilla.replace('<!--Perfiles de usarios-->', datos);
-  res.send(plantilla);*/
+  plantilla=plantilla.replace('<!--Perfiles de usuarios-->', datos);
+  res.send(plantilla);
 });
-app.post('/userProfile', (req, res)=>{
+app.get('/userProfile', (req, res)=>{
   /*Cuando un usuario que haya inciado sesion quiera visitar el perfil de otro usuario registrado, este 
     sera el codigo que manejara esa peticion.
     Lo que hace es sencillo.
-    Se envia el nombre del usuario asociado al perfil (enviado en formato json).
+    Se recibe como parametro el nombre del usuario asociado al perfil (en este caso como req.query.userName).
     Luego, se consulta en la base de datos los datos de ese usuario.
     Los datos de ese usuario se combinan con la plantilla del perfil del usuario solcitado.
     Por ultimo, se envia la plantilla al usuario que hizo la solicitud, mostrandole el perfil correspondiente.*/
-    rellenarPlantillaConDatos('/home/freddy/Escritorio/mvp-citas-cougarsAndMilf/perfilDeUsuario.html', req.body.userName, res);
+    rellenarPlantillaConDatos('/home/freddy/Escritorio/mvp-citas-cougarsAndMilf/perfilDeUsuario.html', req.query.userName, res);
 });
 app.get('/userProfilePhotos', isLoggedIn, (req, res)=>{
   /*Las fotos del usuario consultado se muestran al usuario solicitante. Esta consulta se hace desde el perfil
