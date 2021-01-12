@@ -25,7 +25,7 @@ app.use(express.urlencoded({extended: false}));
 app.use(express.static('imagenes'));
 app.use(express.static('users-photos'));
 app.use(passport.initialize());
-//app.use(express.static('bootstrap')); //Luego averiguare como insertar estilos de boostrap...
+app.use('/css', express.static(__dirname + '/node_modules/bootstrap/dist/css'));
 passport.use('local-signin', new LocalStrategy(({
    usernameField: 'username',
    passwordField: 'password',
@@ -300,10 +300,12 @@ app.get('/edit-profile', isLoggedIn, (req, res)=>{
     res.sendFile('/home/freddy/Escritorio/mvp-citas-cougarsAndMilf/editarPerfil.html');
 });
 app.put('/edit-profile', isLoggedIn, async (req, res)=>{
+  console.log(req.user);
+  console.log(req.body);
   try{
-  	let consulta=`UPDATE users SET header='${req.body.encabezado}', bodyType='${req.body.tipoDeCuerpo}', heigth='${req.body.altura}',
-  	 ethnicGroup='${req.body.grupoEtnico}', maritalStatus='${req.body.estadoCivil}', sons='${req.body.hijos}', housingSituation='${req.body.
-  	 situacionDeVivienda}', educationalLevel='${req.body.nivelDeEstudios}', work='${req.body.trabajas}', smokes='${req.body.fuma}', drink='${req.body.bebe}',
+  	let consulta=`UPDATE users SET header='${req.body.encabezado}', bodytype='${req.body.tipoDeCuerpo}', heigth='${req.body.altura}',
+  	 ethnicgroup='${req.body.grupoEtnico}', maritalstatus='${req.body.estadoCivil}', sons='${req.body.hijos}', housingsituation='${req.body.
+  	 situacionDeVivienda}', educationallevel='${req.body.nivelDeEstudios}', work='${req.body.trabaja}', smokes='${req.body.fuma}', drink='${req.body.bebe}',
   	 description='${req.body.descripcion}' WHERE email='${req.user}'`;
     await client.query(consulta);
     res.json({message:'Actualizacion exitosa'});
@@ -368,7 +370,7 @@ app.get('/userProfile', (req, res)=>{
     Por ultimo, se envia la plantilla al usuario que hizo la solicitud, mostrandole el perfil correspondiente.*/
     rellenarPlantillaConDatos('/home/freddy/Escritorio/mvp-citas-cougarsAndMilf/perfilDeUsuario.html', req.query.userName, res);
 });
-app.get('/userProfilePhotos', isLoggedIn, (req, res)=>{
+app.get('/userProfilePhotos', (req, res)=>{
   /*Las fotos del usuario consultado se muestran al usuario solicitante. Esta consulta se hace desde el perfil
   del usuario consultado*/
 });
