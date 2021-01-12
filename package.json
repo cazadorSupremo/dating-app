@@ -1,12 +1,12 @@
 {
-  "name": "mvp-citas-cougarsAndMilfs",
+  "name": "majorandminor",
   "version": "1.0.0",
-  "description": "Aplicacion web para conocer mujeres maduras dispuestas a salir con hombres jovenes que ellas.",
+  "description": "dating web app for young men and older women",
   "main": "app.js",
   "scripts": {
     "start": "nodemon app.js"
   },
-  "author": "mutageno",
+  "author": "cazadorSupremo",
   "license": "ISC",
   "devDependencies": {
     "nodemon": "^2.0.6"
