@@ -24,10 +24,10 @@ al final-->
 <nav aria-label="breadcrumb">
   <ol class="breadcrumb">
     <li class="breadcrumb-item"><a href="search">Busqueda</a></li>
-    <li class="breadcrumb-item"><a href="search">Chat</a></li>
-    <li class="breadcrumb-item"><a href="/myProfile">Mi perfil</a></li>
+    <li class="breadcrumb-item"><a href="#">Chat</a></li>
+    <li class="breadcrumb-item"><a href="/my-profile">Mi perfil</a></li>
     <li class="breadcrumb-item"><a href="#">Configuracion de la cuenta</a></li>
-    <li class="breadcrumb-item"><a href="/log-out">Salir</a></li>
+    <li class="breadcrumb-item"><a href="/logout">Salir</a></li>
   </ol>
 </nav>
 
@@ -36,13 +36,13 @@ al final-->
     <!--Fotos-->
   </tbody>
 </table>
-<form action="/uploadPhoto" method="post" enctype="multipart/form-data">
+<form action="/upload-photo" method="post" enctype="multipart/form-data">
   <input  class="form-control" type="file" name="photo">
   <button type="submit" class="btn btn-primary">Enviar foto</button>
 </form>
 <button id="eliminar" class="btn btn-danger" type="button">Eliminar</button>
 <button id="fotoDePerfil" class="btn-success" type="button">Establecer foto de perfil</button>
-
+</form>-
 <script>
   function formatearSrc(src){ //Esta funcion se encarga de formatear el src de las imagenes con el fin de enviar solo el nombre de la imagen.
     //El nombre esta despues del cuarto '/'
@@ -114,9 +114,12 @@ al final-->
         body: JSON.stringify(nuevaFotoDePerfil)});
         let response=await request.json();
         if (response.message==='Foto de perfil cambiada!'){
+          /*Selecciono la foto y cambio su src para agregarle la constante. Asi puedo disminuir el error. Una manera que se me 
+          ocurre de identifiar la foto de perfil actual (para que al usuario no se elvide) al momento de elegir una nueva
+          foto de perfil es agregar un marco de algun color diferente al verde que identifique la foto de perfil actual*/
           alert('Foto de perfil cambiada!');
         } else{
-          alert('Error, intentelo de nuevo');
+          alert('Error, intentelo de nuevo. Posible causa: Esta intentado cambiar su foto de perfil con su foto de perfil actual o es un error del sistema. En el segundo caso contacte con soporte.');
         }
       }
     });

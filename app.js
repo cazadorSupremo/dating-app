@@ -22,7 +22,7 @@ app.use(passport.initialize());
 app.use(passport.session());
 app.use(express.json());
 app.use(express.urlencoded({extended: false}));
-app.use(express.static('imagenes'));
+app.use(express.static('images'));
 app.use(express.static('users-photos'));
 app.use(passport.initialize());
 app.use('/css', express.static(__dirname + '/node_modules/bootstrap/dist/css'));
@@ -107,9 +107,9 @@ async function obtenerFotoPefilUsuario(username){
    para que se estandarice como nada mas el nombre del usuario!*/
   let sexo=await client.query(`SELECT sex FROM users WHERE email='${username}' OR username='${username}'`), avatar;
   if (sexo.rows[0].sex){
-    avatar='avatares-por-defecto/male.jpg';
+    avatar='default-avatars/male.jpg';
   } else{
-    avatar='avatares-por-defecto/female.jpeg';
+    avatar='default-avatars/female.jpeg';
   }
   const etiquetaFotoDePerfil='etiquetaFotoDePerfilxxxxx';
   let srcFotoDePerfil='', fotos;
@@ -137,7 +137,8 @@ async function obtenerFotoPefilUsuario(username){
   }
   return srcFotoDePerfil;
 }
-async function rellenarPlantillaConDatos(rutaDePlantilla, idUsuario, response){
+async function rellenarPlantillaConDatos(rutaDePlantilla, idUsuario, usuarioSolicitante){ /*El tercer parametro (tipo bool) de esta funcion
+  definira si se generara el perfil del propio usuario solicitante o el perfil de otro usuario ajeno*/
   try{
   	/*Este codigo se encargara de generar el perfil del usuario.
      Nota:Ordenar los datos en la base de datos para reducir este codigo(refactorizar) a un bucle...*/
@@ -149,6 +150,13 @@ async function rellenarPlantillaConDatos(rutaDePlantilla, idUsuario, response){
     /*En la consulta, verifico correo o usuario, porque cuando es el usuario, envia el idUsuario(su correo) y cuando el usuario
     consulta el perfil del otro usuario, se envia el nombre de usuario del perfil consultado, debo corregir esto 
     para que se estandarice como nada mas el nombre del usuario!*/
+    if (usuarioSolicitante){
+      plantilla=plantilla.replace('<!--Fotos del mismo o fotos de otro usuario-->', '<a href="my-profile-photos">Fotos</a>');
+      plantilla=plantilla.replace('<!--editar perfil o chat-->', '<a href="edit-profile">Editar perfil</a>');
+    } else{
+      plantilla=plantilla.replace('<!--Fotos del mismo o fotos de otro usuario-->', '<a id="photos" href="other-user-profile-photos">Fotos</a>');
+      plantilla=plantilla.replace('<!--editar perfil o chat-->', '<a href="chat">Mensaje</a>')
+    }
     let result=await client.query(`SELECT * FROM users WHERE email='${idUsuario}' OR username='${idUsuario}'`);
     plantilla=plantilla.replace('foto de perfil', srcFotoDePerfil);
     plantilla=plantilla.replace('Pais, Estado, Ciudad', result.rows[0].country); //Por ahora solo estoy usando el pais...
@@ -168,51 +176,51 @@ async function rellenarPlantillaConDatos(rutaDePlantilla, idUsuario, response){
     plantilla=plantilla.replace('valor', result.rows[0].drink);
     plantilla=plantilla.replace('Descripcion', result.rows[0].description);
     //Faltan mas datos, pero por ahora me serviran de prueba.
-    response.send(plantilla);
-    return response.end();
+    return plantilla;
   } catch(err){
-  	return 'Error en la operacion';
+  	return 'Error';
   }
 }
 //app.use(passport.initialize());
 app.get('/', (req, res)=>{
   if (req.isAuthenticated()){
-    res.redirect('/myProfile');
+    res.redirect('/my-profile');
   } else{
-    res.sendFile('/home/freddy/Escritorio/mvp-citas-cougarsAndMilf/index.html');
+    res.sendFile('/home/freddy/Escritorio/majorandminor/index.html');
   }
 });
-app.get('/registro', (req, res)=>{
-  res.sendFile('/home/freddy/Escritorio/mvp-citas-cougarsAndMilf/registro.html');
+app.get('/registry', (req, res)=>{
+  res.sendFile('/home/freddy/Escritorio/majorandminor/registro.html');
 });
 app.post('/signin', passport.authenticate('local-signin', {
     successRedirect: "/",
-    failureRedirect: "/registro"
+    failureRedirect: "/registry"
   })
 );
 //Inicio de sesion del usuario.
 app.post('/login', passport.authenticate('local-login', {
-  successRedirect: '/myProfile',
+  successRedirect: '/my-profile',
   failureRedirect: '/'
 }));
-app.get('/log-out', (req, res) => {
+app.get('/logout', (req, res) => {
   req.logout();
   res.redirect("/");
 });
-app.get('/myProfile', isLoggedIn, (req, res)=>{
+app.get('/my-profile', isLoggedIn, async (req, res)=>{
   //Consulto los datos del usuario (con clave) nombre, los combino con la plantilla de perfil de usuario y se lo envio.
   //Nota:Hacer una subrutina, asi puedo usarla tanto para ver el perfil del propio usuario como para ver un perfil ajeno.
-  rellenarPlantillaConDatos('/home/freddy/Escritorio/mvp-citas-cougarsAndMilf/perfilDeUsuario.html', req.user, res);
+  let plantilla=await rellenarPlantillaConDatos('/home/freddy/Escritorio/majorandminor/user-profile.html', req.user, true);
+  res.send(plantilla);
 });
 
-app.get('/my-photos', isLoggedIn, async (req, res)=>{
+app.get('/my-profile-photos', isLoggedIn, async (req, res)=>{
   try{
   	//Verifico que existe el usuario consultando su directorio.
     let fileHandle=await fs.opendir(`users-photos/${req.user}`);
     //Cuento la cantidad de fotos que tiene el usuario en su directorio, y se retorna un array con las respectivas.
     let fotos=await fs.readdir(`users-photos/${req.user}`);
     //Ahora combino las fotos con la plantilla html.
-    let plantilla=await fs.readFile('/home/freddy/Escritorio/mvp-citas-cougarsAndMilf/photos.html', 'utf8');
+    let plantilla=await fs.readFile('/home/freddy/Escritorio/majorandminor/photos.html', 'utf8');
     let fotoshtml='', fila='<tr>'; //La fila solo contendra 3 elementos(fotos). Cada vez que una fila se llena, se añade al relleno de la tabla y se crea otra nueva.
     let contadorDeFotos=1;
     let contenidoDeTabla='';
@@ -239,10 +247,14 @@ app.get('/my-photos', isLoggedIn, async (req, res)=>{
     plantilla=plantilla.replace('<!--Fotos-->', contenidoDeTabla);
     res.send(plantilla);
   } catch(err){
-  	res.redirect('/myProfile');
+  	/*Si hay un error, entonces probablemente el subdirectorio no exista y se tenga que crear el subdirectorio del usuario.
+    Tengo mis dudas respecto a que solo puede ser que no exista, asi que probablemente tenga que usar otro bloque try-catch.
+    Creo el directorio vuelvo a redirigir al usuario para que al menos vea su vista de fotos vacia (recursion).*/
+  	await fs.mkdir(`users-photos/${req.user}`);
+  	res.redirect('/my-profile-photos');
   }
 });
-app.post('/uploadPhoto', isLoggedIn, upload.single('photo'), async (req, res)=>{
+app.post('/upload-photo', isLoggedIn, upload.single('photo'), async (req, res)=>{
   /*Me dirijo al directorio users-photos.
   Cada subdirectorio del mencionado directorio pertenece a un usuario de la aplicacion, y dentro de cada subdirectorio, se encuentran 
   almacenadas las fotos del correspondiente usuario.
@@ -252,14 +264,11 @@ app.post('/uploadPhoto', isLoggedIn, upload.single('photo'), async (req, res)=>{
   try{
     let fileHandle=await fs.opendir(`users-photos/${req.user}`);
   } catch(err){
-    /*Si hay un error, entonces probablemente el subdirectorio no exista y se tenga que crear el subdirectorio del usuario.
-    Tengo mis dudas respecto a que solo puede ser que no exista, asi que probablemente tenga que usar otro bloque try-catch.*/
-    await fs.mkdir(`users-photos/${req.user}`);
+  	throw err;
   } finally{
   	//Instruccion permite mover la foto desde el directorio users-photos hacia el subdirectorio del usuario...
     await fs.rename(`users-photos/${req.file.filename}`, `users-photos/${req.user}/${req.file.filename}`);
-    await fileHandle.close(); //Para no requerir el recolector de basura...
-  	res.redirect('/my-photos');
+  	res.redirect('/my-profile-photos');
   }
 });
 app.delete('/photos', isLoggedIn, async (req, res)=>{
@@ -287,6 +296,7 @@ app.put('/change-profile-photo', isLoggedIn, async (req, res)=>{
   	  }
   	  i++;
   	}
+  	console.log(req.body.src);
   	await fs.rename(`users-photos/${req.user}/${req.body.src}`, `users-photos/${req.user}/${req.body.src+etiquetaFotoDePerfil}`);
   	await fileHandle.close();
     res.json({message: 'Foto de perfil cambiada!'});
@@ -297,11 +307,9 @@ app.put('/change-profile-photo', isLoggedIn, async (req, res)=>{
 
 app.get('/edit-profile', isLoggedIn, (req, res)=>{
   //Envio una nueva plantilla con los datos del usuario organizados para que el los pueda actualizar.
-    res.sendFile('/home/freddy/Escritorio/mvp-citas-cougarsAndMilf/editarPerfil.html');
+    res.sendFile('/home/freddy/Escritorio/majorandminor/edit-profile.html');
 });
 app.put('/edit-profile', isLoggedIn, async (req, res)=>{
-  console.log(req.user);
-  console.log(req.body);
   try{
   	let consulta=`UPDATE users SET header='${req.body.encabezado}', bodytype='${req.body.tipoDeCuerpo}', heigth='${req.body.altura}',
   	 ethnicgroup='${req.body.grupoEtnico}', maritalstatus='${req.body.estadoCivil}', sons='${req.body.hijos}', housingsituation='${req.body.
@@ -317,7 +325,7 @@ app.put('/edit-profile', isLoggedIn, async (req, res)=>{
 
 app.get('/search', (req, res)=>{
   //Envio junto con todos los usuarios registrados. Luego el usuario decide sus parametros de busqueda.
-  res.sendFile('/home/freddy/Escritorio/mvp-citas-cougarsAndMilf/search.html');
+  res.sendFile('/home/freddy/Escritorio/majorandminor/search.html');
 });
 app.get('/users', async (req, res)=>{ 
    /*Consulto el sexo del usuario para luego consultar todos los usuarios del sexo opuesto.
@@ -334,12 +342,12 @@ app.get('/users', async (req, res)=>{
     perfilesDeUsuarios=await client.query(`SELECT * FROM users WHERE sex='${!sexo.rows[0].sex}' AND age<='${req.query.edad}'
     AND country='${req.query.pais}'`);
   }
-  let plantilla=await fs.readFile('/home/freddy/Escritorio/mvp-citas-cougarsAndMilf/search.html', 'utf8');
+  let plantilla=await fs.readFile('/home/freddy/Escritorio/majorandminor/search.html', 'utf8');
   let fila=`<tr>`, datos='', contador=0;
   for (let i=0; i<perfilesDeUsuarios.rows.length; i++){
   	let srcFotoDePerfil=await obtenerFotoPefilUsuario(perfilesDeUsuarios.rows[i].email);
     if (i===perfilesDeUsuarios.rows.length-1){
-      fila+=`<td><a href="/userProfile?userName=${perfilesDeUsuarios.rows[i].username}"><img src="${srcFotoDePerfil}"><p>${perfilesDeUsuarios.rows[i].country}</p><p>${perfilesDeUsuarios.rows[i].username}</p>
+      fila+=`<td><a href="/user-profile?userName=${perfilesDeUsuarios.rows[i].username}"><img src="${srcFotoDePerfil}"><p>${perfilesDeUsuarios.rows[i].country}</p><p>${perfilesDeUsuarios.rows[i].username}</p>
       <p>${perfilesDeUsuarios.rows[i].age}</p></a></td>`;
       fila+='</tr>';
       datos+=fila;
@@ -348,11 +356,11 @@ app.get('/users', async (req, res)=>{
       fila+='</tr>';
       datos+=fila;
       fila=`<tr>`;
-      fila+=`<td><a href="/userProfile?userName=${perfilesDeUsuarios.rows[i].username}"><img src="${srcFotoDePerfil}"><p>${perfilesDeUsuarios.rows[i].country}</p><p>${perfilesDeUsuarios.rows[i].username}</p>
+      fila+=`<td><a href="/user-profile?userName=${perfilesDeUsuarios.rows[i].username}"><img src="${srcFotoDePerfil}"><p>${perfilesDeUsuarios.rows[i].country}</p><p>${perfilesDeUsuarios.rows[i].username}</p>
       <p>${perfilesDeUsuarios.rows[i].age}</p></a></td>`;
       contador++;
     } else{
-      fila+=`<td><a href="/userProfile?userName=${perfilesDeUsuarios.rows[i].username}"><img src="${srcFotoDePerfil}"><p>${perfilesDeUsuarios.rows[i].country}</p><p>${perfilesDeUsuarios.rows[i].username}</p>
+      fila+=`<td><a href="/user-profile?userName=${perfilesDeUsuarios.rows[i].username}"><img src="${srcFotoDePerfil}"><p>${perfilesDeUsuarios.rows[i].country}</p><p>${perfilesDeUsuarios.rows[i].username}</p>
       <p>${perfilesDeUsuarios.rows[i].age}</p></a></td>`;
       contador++;
     }
@@ -360,7 +368,7 @@ app.get('/users', async (req, res)=>{
   plantilla=plantilla.replace('<!--Perfiles de usuarios-->', datos);
   res.send(plantilla);
 });
-app.get('/userProfile', (req, res)=>{
+app.get('/user-profile', async (req, res)=>{
   /*Cuando un usuario que haya inciado sesion quiera visitar el perfil de otro usuario registrado, este 
     sera el codigo que manejara esa peticion.
     Lo que hace es sencillo.
@@ -368,11 +376,51 @@ app.get('/userProfile', (req, res)=>{
     Luego, se consulta en la base de datos los datos de ese usuario.
     Los datos de ese usuario se combinan con la plantilla del perfil del usuario solcitado.
     Por ultimo, se envia la plantilla al usuario que hizo la solicitud, mostrandole el perfil correspondiente.*/
-    rellenarPlantillaConDatos('/home/freddy/Escritorio/mvp-citas-cougarsAndMilf/perfilDeUsuario.html', req.query.userName, res);
+    let plantilla=await rellenarPlantillaConDatos('/home/freddy/Escritorio/majorandminor/user-profile.html', req.query.userName, false);
+    res.send(plantilla);
 });
-app.get('/userProfilePhotos', (req, res)=>{
+app.get('/other-user-profile-photos', async (req, res)=>{
+  console.log(req.query.userName);
+  let emailUser=await client.query(`SELECT email FROM users WHERE username='${req.query.userName}'`);
+  console.log(emailUser.rows[0]);
+  console.log(emailUser.rows[0].email);
   /*Las fotos del usuario consultado se muestran al usuario solicitante. Esta consulta se hace desde el perfil
   del usuario consultado*/
+  try{
+  	//Verifico que existe el usuario consultando su directorio.
+    let fileHandle=await fs.opendir(`users-photos/${emailUser.rows[0].email}`);
+    //Cuento la cantidad de fotos que tiene el usuario en su directorio, y se retorna un array con las respectivas.
+    let fotos=await fs.readdir(`users-photos/${emailUser.rows[0].email}`);
+    //Ahora combino las fotos con la plantilla html.
+    let plantilla=await fs.readFile('/home/freddy/Escritorio/majorandminor/photos.html', 'utf8');
+    let fotoshtml='', fila='<tr>'; //La fila solo contendra 3 elementos(fotos). Cada vez que una fila se llena, se añade al relleno de la tabla y se crea otra nueva.
+    let contadorDeFotos=1;
+    let contenidoDeTabla='';
+    for (let i=0; i<fotos.length; i++){
+      if (i===fotos.length-1){
+        fotoshtml+=`<td><img src="${emailUser.rows[0].email}/${fotos[i]}"></td>`;
+        fila+=fotoshtml+'</tr>';
+        contenidoDeTabla+=fila;
+      } else{
+          if (contadorDeFotos===3){
+            fotoshtml+=`<td><img src="${emailUser.rows[0].email}/${fotos[i]}"></td>`;
+            fila+=fotoshtml+'</tr>';
+            contenidoDeTabla+=fila;
+            fotoshtml='';
+            fila='<tr>';
+            contadorDeFotos=1;
+          } else{
+            fotoshtml+=`<td><img src="${emailUser.rows[0].email}/${fotos[i]}"></td>`;
+            contadorDeFotos++;
+          }
+      }
+    }
+    await fileHandle.close(); //Cierro el directorio para que el recolector de basura no se haga cargo.
+    plantilla=plantilla.replace('<!--Fotos-->', contenidoDeTabla);
+    res.send(plantilla);
+  } catch(err){
+  	res.redirect('/my-profile');
+  }
 });
 
 app.listen(port, ()=>{

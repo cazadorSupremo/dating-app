@@ -12,24 +12,23 @@
 <nav aria-label="breadcrumb">
   <ol class="breadcrumb">
     <li class="breadcrumb-item"><a href="search">Busqueda</a></li>
-    <li class="breadcrumb-item"><a href="search">Chat</a></li>
-    <li class="breadcrumb-item"><a href="/myProfile">Mi perfil</a></li>
+    <li class="breadcrumb-item"><a href="#">Chat</a></li>
+    <li class="breadcrumb-item"><a href="/my-profile">Mi perfil</a></li>
     <li class="breadcrumb-item"><a href="#">Configuracion de la cuenta</a></li>
-    <li class="breadcrumb-item"><a href="/log-out">Salir</a></li>
+    <li class="breadcrumb-item"><a href="/logout">Salir</a></li>
   </ol>
 </nav>
 
 <div>
 <img src="foto de perfil" alt="foto de perfil">
 <p>Pais, Estado, Ciudad</p>
-<p>Nombre de usuario</p>
+<p id="userName">Nombre de usuario</p>
 <p>Nombre y Apellido</p>
 <p>¿Miembro premium?</p>
 <p>Correo verificado</p>
 </div>
-  <a href="my-photos">Fotos</a>
-  <a href="edit-profile">Editar perfil</a>
-  <a href="">Configuracion de la cuenta</a>
+  <!--Fotos del mismo o fotos de otro usuario-->
+  <!--editar perfil o chat-->
   <h2>Encabezado</h2>
   <table id="datos" class="table">
     <tr>
@@ -75,6 +74,13 @@
 </table>
 
 <p>Descripcion</p>
+
+<script>
+  //Este script se ejecutara si el perfil es de un usuario ajeno.
+  let linkPhotos=document.getElementById('photos');
+  let userName=document.getElementById('userName');
+  linkPhotos.href=`other-user-profile-photos?userName=${userName.textContent}`;
+</script>
 
 </body>
 </html>
