@@ -19,3 +19,5 @@ Este es el objetivo pendiente, asi podre terminar definitamente con la vista de 
 ya que si visito un perfil ajeno, no me muestra la foto de su perfil, debido a que la funcion "rellenarPlantillaConDatos" 
 toma como argumento el req.user, el cual es el email, pero al momento de consultar el perfil de otro usuario toma como
 argumento el req.query.userName, el cual es el nombre del usuario, no el email.
+
+Actualizacion: Objetivo logrado!

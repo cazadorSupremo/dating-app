@@ -63,7 +63,7 @@ passport.use('local-login', new LocalStrategy({
      try{
        let consultaDeUsuario=await client.query(`SELECT * FROM users WHERE email='${username}' AND password='${password}'`);
        if (consultaDeUsuario.rows.length===1){
-         let newUser={id: username};
+         let newUser={id: consultaDeUsuario.rows[0].username};
          return done(null, newUser);
        } else{
          return done(null, {message: 'Usuario no existe!'});
@@ -80,7 +80,7 @@ passport.serializeUser((user, done)=>{
 });
 passport.deserializeUser(async (id, done)=>{
   try{
-    let consultaIdDeUsuario=await client.query(`SELECT * FROM users WHERE email='${id}'`);
+    let consultaIdDeUsuario=await client.query(`SELECT * FROM users WHERE username='${id}'`);
     if (consultaIdDeUsuario.rows.length===1){
       return done(false, id); //Si esta el usuario, por lo que error valdra false
     } else{
@@ -105,7 +105,7 @@ async function obtenerFotoPefilUsuario(username){
   /*En la consulta, verifico correo o usuario, porque cuando es el usuario, envia el idUsuario(su correo) y cuando el usuario
    consulta el perfil del otro usuario, se envia el nombre de usuario del perfil consultado, debo corregir esto 
    para que se estandarice como nada mas el nombre del usuario!*/
-  let sexo=await client.query(`SELECT sex FROM users WHERE email='${username}' OR username='${username}'`), avatar;
+  let sexo=await client.query(`SELECT sex FROM users WHERE username='${username}'`), avatar;
   if (sexo.rows[0].sex){
     avatar='default-avatars/male.jpg';
   } else{
@@ -157,7 +157,7 @@ async function rellenarPlantillaConDatos(rutaDePlantilla, idUsuario, usuarioSoli
       plantilla=plantilla.replace('<!--Fotos del mismo o fotos de otro usuario-->', '<a id="photos" href="other-user-profile-photos">Fotos</a>');
       plantilla=plantilla.replace('<!--editar perfil o chat-->', '<a href="chat">Mensaje</a>')
     }
-    let result=await client.query(`SELECT * FROM users WHERE email='${idUsuario}' OR username='${idUsuario}'`);
+    let result=await client.query(`SELECT * FROM users WHERE username='${idUsuario}'`);
     plantilla=plantilla.replace('foto de perfil', srcFotoDePerfil);
     plantilla=plantilla.replace('Pais, Estado, Ciudad', result.rows[0].country); //Por ahora solo estoy usando el pais...
     plantilla=plantilla.replace('Nombre de usuario', result.rows[0].username);
@@ -296,7 +296,6 @@ app.put('/change-profile-photo', isLoggedIn, async (req, res)=>{
   	  }
   	  i++;
   	}
-  	console.log(req.body.src);
   	await fs.rename(`users-photos/${req.user}/${req.body.src}`, `users-photos/${req.user}/${req.body.src+etiquetaFotoDePerfil}`);
   	await fileHandle.close();
     res.json({message: 'Foto de perfil cambiada!'});
@@ -314,7 +313,7 @@ app.put('/edit-profile', isLoggedIn, async (req, res)=>{
   	let consulta=`UPDATE users SET header='${req.body.encabezado}', bodytype='${req.body.tipoDeCuerpo}', heigth='${req.body.altura}',
   	 ethnicgroup='${req.body.grupoEtnico}', maritalstatus='${req.body.estadoCivil}', sons='${req.body.hijos}', housingsituation='${req.body.
   	 situacionDeVivienda}', educationallevel='${req.body.nivelDeEstudios}', work='${req.body.trabaja}', smokes='${req.body.fuma}', drink='${req.body.bebe}',
-  	 description='${req.body.descripcion}' WHERE email='${req.user}'`;
+  	 description='${req.body.descripcion}' WHERE userName='${req.user}'`;
     await client.query(consulta);
     res.json({message:'Actualizacion exitosa'});
   } catch(err){
@@ -335,7 +334,7 @@ app.get('/users', async (req, res)=>{
   no incluyo eso  parametro en la consulta a la base de datos.
   Cada perfil sera un link en si mismo (a href) y lo unire junto a un parametro(en este caso el nombre de usuario) para que el usuario
   solicitante pueda ver el respectivo perfil...*/
-  let sexo=await client.query(`SELECT sex FROM users WHERE email='${req.user}'`), perfilesDeUsuarios;
+  let sexo=await client.query(`SELECT sex FROM users WHERE username='${req.user}'`), perfilesDeUsuarios;
   if (req.query.pais==='Todos los paises'){
     perfilesDeUsuarios=await client.query(`SELECT * FROM users WHERE sex='${!sexo.rows[0].sex}' AND age<='${req.query.edad}'`);
   } else{
@@ -345,7 +344,7 @@ app.get('/users', async (req, res)=>{
   let plantilla=await fs.readFile('/home/freddy/Escritorio/majorandminor/search.html', 'utf8');
   let fila=`<tr>`, datos='', contador=0;
   for (let i=0; i<perfilesDeUsuarios.rows.length; i++){
-  	let srcFotoDePerfil=await obtenerFotoPefilUsuario(perfilesDeUsuarios.rows[i].email);
+  	let srcFotoDePerfil=await obtenerFotoPefilUsuario(perfilesDeUsuarios.rows[i].username);
     if (i===perfilesDeUsuarios.rows.length-1){
       fila+=`<td><a href="/user-profile?userName=${perfilesDeUsuarios.rows[i].username}"><img src="${srcFotoDePerfil}"><p>${perfilesDeUsuarios.rows[i].country}</p><p>${perfilesDeUsuarios.rows[i].username}</p>
       <p>${perfilesDeUsuarios.rows[i].age}</p></a></td>`;
@@ -381,16 +380,13 @@ app.get('/user-profile', async (req, res)=>{
 });
 app.get('/other-user-profile-photos', async (req, res)=>{
   console.log(req.query.userName);
-  let emailUser=await client.query(`SELECT email FROM users WHERE username='${req.query.userName}'`);
-  console.log(emailUser.rows[0]);
-  console.log(emailUser.rows[0].email);
   /*Las fotos del usuario consultado se muestran al usuario solicitante. Esta consulta se hace desde el perfil
   del usuario consultado*/
   try{
   	//Verifico que existe el usuario consultando su directorio.
-    let fileHandle=await fs.opendir(`users-photos/${emailUser.rows[0].email}`);
+    let fileHandle=await fs.opendir(`users-photos/${req.query.userName}`);
     //Cuento la cantidad de fotos que tiene el usuario en su directorio, y se retorna un array con las respectivas.
-    let fotos=await fs.readdir(`users-photos/${emailUser.rows[0].email}`);
+    let fotos=await fs.readdir(`users-photos/${req.query.userName}`);
     //Ahora combino las fotos con la plantilla html.
     let plantilla=await fs.readFile('/home/freddy/Escritorio/majorandminor/photos.html', 'utf8');
     let fotoshtml='', fila='<tr>'; //La fila solo contendra 3 elementos(fotos). Cada vez que una fila se llena, se añade al relleno de la tabla y se crea otra nueva.
@@ -398,19 +394,19 @@ app.get('/other-user-profile-photos', async (req, res)=>{
     let contenidoDeTabla='';
     for (let i=0; i<fotos.length; i++){
       if (i===fotos.length-1){
-        fotoshtml+=`<td><img src="${emailUser.rows[0].email}/${fotos[i]}"></td>`;
+        fotoshtml+=`<td><img src="${req.query.userName}/${fotos[i]}"></td>`;
         fila+=fotoshtml+'</tr>';
         contenidoDeTabla+=fila;
       } else{
           if (contadorDeFotos===3){
-            fotoshtml+=`<td><img src="${emailUser.rows[0].email}/${fotos[i]}"></td>`;
+            fotoshtml+=`<td><img src="${req.query.userName}/${fotos[i]}"></td>`;
             fila+=fotoshtml+'</tr>';
             contenidoDeTabla+=fila;
             fotoshtml='';
             fila='<tr>';
             contadorDeFotos=1;
           } else{
-            fotoshtml+=`<td><img src="${emailUser.rows[0].email}/${fotos[i]}"></td>`;
+            fotoshtml+=`<td><img src="${req.query.userName}/${fotos[i]}"></td>`;
             contadorDeFotos++;
           }
       }
@@ -419,7 +415,7 @@ app.get('/other-user-profile-photos', async (req, res)=>{
     plantilla=plantilla.replace('<!--Fotos-->', contenidoDeTabla);
     res.send(plantilla);
   } catch(err){
-  	res.redirect('/my-profile');
+  	res.json(`Ha ocurrido un error al visualizar las fotos del usuario ${req.query.userName}`);
   }
 });
 
