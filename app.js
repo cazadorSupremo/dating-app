@@ -24,38 +24,10 @@ app.use(express.json());
 app.use(express.urlencoded({extended: false}));
 app.use(express.static('images'));
 app.use(express.static('users-photos'));
+app.use(express.static('Responsive-Image-Modal'));
 app.use(passport.initialize());
 app.use('/css', express.static(__dirname + '/node_modules/bootstrap/dist/css'));
-passport.use('local-signin', new LocalStrategy(({
-   usernameField: 'username',
-   passwordField: 'password',
-   passReqToCallback: true //Asi puedo pasar el objeto "req" a la funcion de autenticacion de passport, y acceder todos los datos del formulario.
- }), async (req, username, password, done)=>{
-  if (req.body.sex==='man'){
-    req.body.sex=1;
-  } else {
-  	req.body.sex=0;
-  }
-  try{
-    let registroDeNuevoUsuario=`INSERT INTO users (email, password, username, name, lastName, sex, age, country) values('${req.body.email}', '${password}', 
-    '${username}', '${req.body.name}', '${req.body.lastName}', '${req.body.sex}', '${req.body.age}', '${req.body.country}')`;
-    await client.query(registroDeNuevoUsuario);
-    let newUser={
-      username: username,
-      password: password,
-      id: req.body.email,
-      name: req.body.name,
-      lastName: req.body.lastName,
-    }
-    console.log('Nuevo usuario registrado');
-    return done(null, newUser);
-  } catch(err){
-    console.log('Error en el registro del nuevo usuario.');
-    return done(err);
-  } /*finally{
-    client.end();
-  }*/
-}));
+app.use('/croppie', express.static(__dirname + '/node_modules/croppie'));
 passport.use('local-login', new LocalStrategy({
   usernameField: 'email',
   passwordField: 'password'
@@ -107,7 +79,7 @@ async function obtenerFotoPefilUsuario(username){
    para que se estandarice como nada mas el nombre del usuario!*/
   let sexo=await client.query(`SELECT sex FROM users WHERE username='${username}'`), avatar;
   if (sexo.rows[0].sex){
-    avatar='default-avatars/male.jpg';
+    avatar='default-avatars/male.jpeg';
   } else{
     avatar='default-avatars/female.jpeg';
   }
@@ -190,13 +162,28 @@ app.get('/', (req, res)=>{
   }
 });
 app.get('/registry', (req, res)=>{
-  res.sendFile('/home/freddy/Escritorio/majorandminor/registro.html');
+  res.sendFile('/home/freddy/Escritorio/majorandminor/registry.html');
 });
-app.post('/signin', passport.authenticate('local-signin', {
-    successRedirect: "/",
-    failureRedirect: "/registry"
-  })
-);
+app.post('/signin', async (req, res)=>{ /*Esta es una manera insegura de registrar usuarios en base de datos.
+Necesito validar y sanitizar los datos, y aparte de eso, implementar la verificacion por correo electronico.*/
+  if (req.body.sex==='man'){
+    req.body.sex=1;
+  } else {
+  	req.body.sex=0;
+  }
+  try{
+    let registroDeNuevoUsuario=`INSERT INTO users (email, password, username, name, lastName, sex, age, country) values('${req.body.email}', '${req.body.password}', 
+    '${req.body.username}', '${req.body.name}', '${req.body.lastName}', '${req.body.sex}', '${req.body.age}', '${req.body.country}')`;
+    await client.query(registroDeNuevoUsuario);
+    console.log('Nuevo usuario registrado');
+    res.redirect('/');
+  } catch(err){
+    console.log(err);
+    res.redirect('/registry');
+  } /*finally{
+    client.end();
+  }*/
+});
 //Inicio de sesion del usuario.
 app.post('/login', passport.authenticate('local-login', {
   successRedirect: '/my-profile',
@@ -258,7 +245,7 @@ app.post('/upload-photo', isLoggedIn, upload.single('photo'), async (req, res)=>
   /*Me dirijo al directorio users-photos.
   Cada subdirectorio del mencionado directorio pertenece a un usuario de la aplicacion, y dentro de cada subdirectorio, se encuentran 
   almacenadas las fotos del correspondiente usuario.
-  Los subdirectorios se nombran en funcion del username del usuario (en este caso prototipo, el id del usuario (correo).
+  Los subdirectorios se nombran en funcion del username del usuario.
   Guardo la foto recibida en la carpeta correspondiente del usuario.
   */
   try{
@@ -266,7 +253,7 @@ app.post('/upload-photo', isLoggedIn, upload.single('photo'), async (req, res)=>
   } catch(err){
   	throw err;
   } finally{
-  	//Instruccion permite mover la foto desde el directorio users-photos hacia el subdirectorio del usuario...
+  	//Instruccion que permite mover la foto desde el directorio users-photos hacia el subdirectorio del usuario...
     await fs.rename(`users-photos/${req.file.filename}`, `users-photos/${req.user}/${req.file.filename}`);
   	res.redirect('/my-profile-photos');
   }
@@ -379,7 +366,6 @@ app.get('/user-profile', async (req, res)=>{
     res.send(plantilla);
 });
 app.get('/other-user-profile-photos', async (req, res)=>{
-  console.log(req.query.userName);
   /*Las fotos del usuario consultado se muestran al usuario solicitante. Esta consulta se hace desde el perfil
   del usuario consultado*/
   try{
@@ -419,6 +405,6 @@ app.get('/other-user-profile-photos', async (req, res)=>{
   }
 });
 
-app.listen(port, ()=>{
+app.listen(port, '0.0.0.0', ()=>{
   console.log('Aplicacion iniciada!');
 });

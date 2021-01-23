@@ -1,0 +1,3 @@
+Borre en package.json la linea que hacia referencia a la licencia:
+"license": "ISC"
+Mi software no tendra esa licencia ni ninguna de codigo abierto/libre, asi que por eso la borre.

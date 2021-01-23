@@ -7,10 +7,16 @@
   <title></title>
   <style>
     img{
-      width: 350px;
-      height: 250px;
+      max-width: 100%;
+      height: auto;
     }
   </style>
+  <link rel="stylesheet" href="css/modal.css">
+  <!--Los siguientes archivos de la libreria croppie solo se serviran si el usuario va a subir una foto, es decir,
+    si el usuario que visualiza el documento photos.html es el propio usuario (el que inicio sesion). Una solucion
+    a esto podria ser escribir estos archivos desde el servidor en funcion de si es el usuario propio o no-->
+  <link rel="stylesheet" href="croppie/croppie.css"/>
+  <script src="croppie/croppie.js"></script>
 </head>
 
 <body>
@@ -30,22 +36,21 @@ al final-->
     <li class="breadcrumb-item"><a href="/logout">Salir</a></li>
   </ol>
 </nav>
-
+<div class="img-modal"></div> <!--Se genera una ventana modal cuando el usuario hace click en una  foto-->
+<img src="" id="photoView"> <!--Para la vista del recorte de la foto que va a subir el usuario-->
 <table class="table">
   <tbody>
     <!--Fotos-->
   </tbody>
 </table>
-<form action="/upload-photo" method="post" enctype="multipart/form-data">
-  <input  class="form-control" type="file" name="photo">
-  <button type="submit" class="btn btn-primary">Enviar foto</button>
-</form>
+<input  class="form-control" type="file" id="photo" name="photo">
+<button class="btn btn-primary" id="uploadPhoto">Enviar foto</button>
 <button id="eliminar" class="btn btn-danger" type="button">Eliminar</button>
-<button id="fotoDePerfil" class="btn-success" type="button">Establecer foto de perfil</button>
-</form>-
+<button id="fotoDePerfil" class="btn-success" type="button">Seleccionar foto de perfil</button>
 <script>
   function formatearSrc(src){ //Esta funcion se encarga de formatear el src de las imagenes con el fin de enviar solo el nombre de la imagen.
-    //El nombre esta despues del cuarto '/'
+    //El nombre esta despues del primer '/'
+    console.log(src);
     let name='', contador=0;
     for (let i=0; i<src.length; i++){
       if (src[i]==='/'){
@@ -72,6 +77,13 @@ al final-->
     fotoASeleccionar.style.borderColor='green';
     fotoASeleccionar.style.borderWidth='5px';
     fotoASeleccionar.style.borderStyle='solid';
+  }
+  function borrarMarcos(arrayFotosDePerfil){
+  	for (let i=0; i<arrayFotosDePerfil.length; i++){
+      arrayFotosDePerfil[i].style.borderColor=null;
+      arrayFotosDePerfil[i].style.borderWidth=null;
+      arrayFotosDePerfil[i].style.borderStyle=null;
+    }
   }
   //Codigo que sirve para agrandar una imagen cuando el usuario haga click en ella:
   let photos=document.querySelectorAll('img');
@@ -123,6 +135,24 @@ al final-->
         }
       }
     });
+    let cancelar=document.createElement('button');
+    cancelar.textContent='Cancelar';
+    document.querySelector('body').appendChild(cancelar);
+    cancelar.addEventListener('click', ()=>{
+      //Elimino los eventos de las imagenes (añadir marco) y elimino los respectivos botones.
+      let fotos=document.querySelectorAll('img');
+      borrarMarcos(fotos);
+      for (let i=0; i<fotos.length; i++){
+        fotos[i].addEventListener('click', ()=>{
+          //Creo marcos nulos, asi sustituyo a los eventos que añaden un marco verde.
+          fotos[i].style.borderColor=null;
+          fotos[i].style.borderWidth=null;
+          fotos[i].style.borderStyle=null;
+        });
+      }
+      document.querySelector('body').removeChild(confirmarFotoDePerfil);
+      document.querySelector('body').removeChild(cancelar);
+    });
   });
   //Ahora el codigo de borrado de fotos...
   let botonDeEliminacion=document.getElementById('eliminar');
@@ -151,6 +181,7 @@ al final-->
         /*Este codigo tendra la funcion de seleccionar las imagenes que el usuario selecciono para ser eliminadas.
         Se enviara al servidor en formato json las rutas de las imagenes para que el servidor se encargue de borrarlas.*/
         let fotos=document.querySelectorAll('img'), inputs=document.querySelectorAll('input'), checkboxes=[];
+        console.log(fotos);
         inputs.forEach(input=>{
           if (input.type==='checkbox'){
             checkboxes.push(input);
@@ -159,7 +190,7 @@ al final-->
         let fotosAEliminar=[];
         for (let i=0; i<checkboxes.length; i++){
           if (checkboxes[i].checked){
-            fotosAEliminar.push(formatearSrc(fotos[i].src));
+            fotosAEliminar.push(formatearSrc(fotos[i+2].src)); //i+2 porque las primeras dos son la imagen modal y el preview de recorte
           }
         }
         let objetoFotos={
@@ -196,7 +227,41 @@ al final-->
     }
   });
 </script>
-
+<script src="js/modal.js"></script>
+<script>
+  initModal("img-modal"); //Initialize Modal by class of modal
+  addModal(document.querySelectorAll("img")); // Add Modal to Array of Image/Images
+</script>
+<script>
+  /*Este script servira para usar la libreria croppie con el fin de hacer que el usuario recorte la foto que va a subir
+  con las dimensiones especificadas
+  Estoy teniendo problemas con la calidad... me pregunto si esto lo podria resolver haciendo enviandole un
+  mensaje a los usuarios para que envien una foto de una dimension a<=x<=b donde x es la dimension elegida, a
+  la dimension menor aceptada y b la dimension mayor aceptada.*/
+  let photo=document.getElementById('photo');
+  photo.addEventListener('change', ()=>{
+    let objectURL=URL.createObjectURL(photo.files[0]);
+    let photoView=document.getElementById('photoView');
+    photoView.src=objectURL;
+    let vanilla=new Croppie(photoView, {  //ejemplo de vanilla croppie
+      viewport: { width: 300, height: 300 },
+      boundary: { width: 500, height: 500, type: 'square'},
+      showZoomer: true,
+      enableOrientation: true
+    });
+    let uploadPhoto=document.getElementById('uploadPhoto');
+    uploadPhoto.addEventListener('click', ()=>{
+      vanilla.result('blob', 'viewport', 'jpeg', 1).then(async (blob)=>{
+        let formdata=new FormData();
+        formdata.append('photo', blob); 
+        let request=await fetch('/upload-photo',{
+          method: 'POST',
+          body: formdata
+        });
+    });
+  });
+  });
+</script>
 </body>
 </html>
 

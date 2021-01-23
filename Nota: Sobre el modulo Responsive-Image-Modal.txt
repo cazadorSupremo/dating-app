@@ -1,0 +1,3 @@
+Lo descargue de github. Modifique el archivo css modal.css, especificamente los estilos de
+".img-show #modal-img", el width y el heigth para hacer que cuando la imagen se extienda
+a un tamaño mayor que el original cuando se muestre la imagen modal.
