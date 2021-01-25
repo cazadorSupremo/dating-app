@@ -1,4 +1,4 @@
-1-Mejorar la manera en como el usuario selecciona su foto de perfil.
+1-Mejorar la manera en como el usuario selecciona su foto de perfil. //logrado
 2-Hacer responsive lax fotos. //Logrado
 3-Definir el tamaño que tendran todas las fotos de los usuarios y los avatares masculino y femenino. 
 Implementar la funcion que cambie automaticamente el tamaño de toda imagen que quiera subir el usuario. 
