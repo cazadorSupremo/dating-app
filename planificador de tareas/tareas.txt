@@ -1,9 +1,9 @@
 1-Mejorar la manera en como el usuario selecciona su foto de perfil.
-2-Hacer responsive la vista de fotos de los usuarios.
-3-Definir el tamaño que tendran todas las fotos de los usuarios y los avatares masculino y femenino.
-Implementar la funcion que cambie automaticamente el tamaño de toda imagen que quiera subir el usuario.
+2-Hacer responsive lax fotos. //Logrado
+3-Definir el tamaño que tendran todas las fotos de los usuarios y los avatares masculino y femenino. 
+Implementar la funcion que cambie automaticamente el tamaño de toda imagen que quiera subir el usuario. 
 Me gustaria que fuera como esas que simplementen pintan un circulo o cuadrado en la imagen del tamaño deseado, y
-donde se posicione ese cuadro, ese va a ser el pedazo o area de la imagen que se subira.
+donde se posicione ese cuadro, ese va a ser el pedazo o area de la imagen que se subira. //Logrado gracias a croppie!
 4-Implementar la funcion que permita conocer cuando un usuario esta online y conocer cuando se conecto 
 por ultima vez el usuario (minutos, horas, dias, semanas, meses...).
 5-Implementar la funcion de chat con socket.io

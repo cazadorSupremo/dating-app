@@ -38,15 +38,14 @@ al final-->
 </nav>
 <div class="img-modal"></div> <!--Se genera una ventana modal cuando el usuario hace click en una  foto-->
 <img src="" id="photoView"> <!--Para la vista del recorte de la foto que va a subir el usuario-->
+<input  class="form-control" type="file" id="photo" name="photo">
+<button id="eliminar" class="btn btn-danger" type="button">Eliminar</button>
+<button id="fotoDePerfil" class="btn-success" type="button">Seleccionar foto de perfil</button>
 <table class="table">
   <tbody>
     <!--Fotos-->
   </tbody>
 </table>
-<input  class="form-control" type="file" id="photo" name="photo">
-<button class="btn btn-primary" id="uploadPhoto">Enviar foto</button>
-<button id="eliminar" class="btn btn-danger" type="button">Eliminar</button>
-<button id="fotoDePerfil" class="btn-success" type="button">Seleccionar foto de perfil</button>
 <script>
   function formatearSrc(src){ //Esta funcion se encarga de formatear el src de las imagenes con el fin de enviar solo el nombre de la imagen.
     //El nombre esta despues del primer '/'
@@ -85,13 +84,6 @@ al final-->
       arrayFotosDePerfil[i].style.borderStyle=null;
     }
   }
-  //Codigo que sirve para agrandar una imagen cuando el usuario haga click en ella:
-  let photos=document.querySelectorAll('img');
-  photos.forEach(photo=>{
-    photo.addEventListener('click', ()=>{
-      
-    });
-  });
   //Codigo para establecer la foto de perfil.
   let fotoDePerfil=document.getElementById('fotoDePerfil');
   fotoDePerfil.addEventListener('click', ()=>{
@@ -188,9 +180,9 @@ al final-->
           }
         });
         let fotosAEliminar=[];
-        for (let i=0; i<checkboxes.length; i++){
+        for (let i=0; i<checkboxes.length; i++){ 
           if (checkboxes[i].checked){
-            fotosAEliminar.push(formatearSrc(fotos[i+2].src)); //i+2 porque las primeras dos son la imagen modal y el preview de recorte
+            fotosAEliminar.push(formatearSrc(fotos[i+2].src)); //i+2 porque las primeras dos fotos son la imagen modal y el preview de recorte
           }
         }
         let objetoFotos={
@@ -246,9 +238,30 @@ al final-->
     let vanilla=new Croppie(photoView, {  //ejemplo de vanilla croppie
       viewport: { width: 300, height: 300 },
       boundary: { width: 500, height: 500, type: 'square'},
-      showZoomer: true,
-      enableOrientation: true
+      //showZoomer: true,
     });
+    let enviarFoto=document.createElement('button');
+    enviarFoto.textContent='Agregar foto';
+    let cancelar=document.createElement('button');
+    cancelar.textContent='X';
+    enviarFoto.className='btn btn-primary';
+    cancelar.className='btn btn-danger';
+    //Una solucion que podria usar seria implentar una ruta al momento de que el usuario pulse "X", una ruta hacia la misma pagina...
+    /*cancelar.addEventListener('click', ()=>{
+      document.querySelector('body').removeChild(vanilla.element);
+      document.querySelector('body').removeChild(vanilla.elements);
+    });*/
+    enviarFoto.style.position='fixed';
+    enviarFoto.style.top='20px';
+    enviarFoto.style.left='585px';
+    enviarFoto.id='uploadPhoto';
+    cancelar.style.position='fixed';
+    cancelar.style.top='20px';
+    cancelar.style.left='700px';
+    document.querySelector('body').appendChild(enviarFoto);
+    document.querySelector('body').appendChild(cancelar);
+    vanilla.element.style.position='fixed';
+    vanilla.element.style.top='20px';
     let uploadPhoto=document.getElementById('uploadPhoto');
     uploadPhoto.addEventListener('click', ()=>{
       vanilla.result('blob', 'viewport', 'jpeg', 1).then(async (blob)=>{
@@ -258,9 +271,11 @@ al final-->
           method: 'POST',
           body: formdata
         });
+      });
     });
   });
-  });
+  /*Creo que al momento en que aparezca la foto para recortar, le tendre que añadir dos botones: Enviar foto y 
+  cancelar*/
 </script>
 </body>
 </html>

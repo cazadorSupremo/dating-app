@@ -213,19 +213,19 @@ app.get('/my-profile-photos', isLoggedIn, async (req, res)=>{
     let contenidoDeTabla='';
     for (let i=0; i<fotos.length; i++){
       if (i===fotos.length-1){
-        fotoshtml+=`<td><img src="${req.user}/${fotos[i]}"></td>`;
+        fotoshtml+=`<td><img src="${req.user}/${fotos[i]}" id="${photo+i.toString()}"><button id="${i.toString()}">...</button></td>`;
         fila+=fotoshtml+'</tr>';
         contenidoDeTabla+=fila;
       } else{
           if (contadorDeFotos===3){
-            fotoshtml+=`<td><img src="${req.user}/${fotos[i]}"></td>`;
+            fotoshtml+=`<td><img src="${req.user}/${fotos[i]}" id="${photo+i.toString()}"><button id="${i.toString()}">...</button></td>`;
             fila+=fotoshtml+'</tr>';
             contenidoDeTabla+=fila;
             fotoshtml='';
             fila='<tr>';
             contadorDeFotos=1;
           } else{
-            fotoshtml+=`<td><img src="${req.user}/${fotos[i]}"></td>`;
+            fotoshtml+=`<td><img src="${req.user}/${fotos[i]}" id="${photo+i.toString()}"><button id="${i.toString()}">...</button></td>`;
             contadorDeFotos++;
           }
       }
