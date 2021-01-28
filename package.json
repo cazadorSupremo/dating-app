@@ -11,7 +11,7 @@
     "nodemon": "^2.0.6"
   },
   "dependencies": {
-    "bootstrap": "^4.5.3",
+    "bootstrap": "^5.0.0-beta1",
     "croppie": "^2.6.5",
     "express": "^4.17.1",
     "express-session": "^1.17.1",

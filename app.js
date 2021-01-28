@@ -27,6 +27,7 @@ app.use(express.static('users-photos'));
 app.use(express.static('Responsive-Image-Modal'));
 app.use(passport.initialize());
 app.use('/css', express.static(__dirname + '/node_modules/bootstrap/dist/css'));
+app.use('/js', express.static(__dirname + '/node_modules/bootstrap/dist/js'));
 app.use('/croppie', express.static(__dirname + '/node_modules/croppie'));
 passport.use('local-login', new LocalStrategy({
   usernameField: 'email',
@@ -213,19 +214,37 @@ app.get('/my-profile-photos', isLoggedIn, async (req, res)=>{
     let contenidoDeTabla='';
     for (let i=0; i<fotos.length; i++){
       if (i===fotos.length-1){
-        fotoshtml+=`<td><img src="${req.user}/${fotos[i]}" id="${photo+i.toString()}"><button id="${i.toString()}">...</button></td>`;
+        fotoshtml+=`<td><div><img src="${req.user}/${fotos[i]}" id="${'photo'+i.toString()}">
+        <div class="dropdown"><button class="btn btn-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
+        ...</button>
+        <ul class="dropdown-menu" id="${i.toString()}">
+        <li><button class="dropdown-item">Seleccionar como foto de perfil</button></li>
+        <li><button class="dropdown-item">Eliminar foto</button></li>
+        </ul></div></div></td>`;
         fila+=fotoshtml+'</tr>';
         contenidoDeTabla+=fila;
       } else{
           if (contadorDeFotos===3){
-            fotoshtml+=`<td><img src="${req.user}/${fotos[i]}" id="${photo+i.toString()}"><button id="${i.toString()}">...</button></td>`;
+            fotoshtml+=`<td><div><img src="${req.user}/${fotos[i]}" id="${'photo'+i.toString()}">
+            <div class="dropdown"><button class="btn btn-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
+            ...</button>
+            <ul class="dropdown-menu" id="${i.toString()}">
+            <li><button class="dropdown-item">Seleccionar como foto de perfil</button></li>
+            <li><button class="dropdown-item">Eliminar foto</button></li>
+            </ul></div></div></td>`;
             fila+=fotoshtml+'</tr>';
             contenidoDeTabla+=fila;
             fotoshtml='';
             fila='<tr>';
             contadorDeFotos=1;
           } else{
-            fotoshtml+=`<td><img src="${req.user}/${fotos[i]}" id="${photo+i.toString()}"><button id="${i.toString()}">...</button></td>`;
+            fotoshtml+=`<td><div><img src="${req.user}/${fotos[i]}" id="${'photo'+i.toString()}">
+            <div class="dropdown"><button class="btn btn-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
+            ...</button>
+            <ul class="dropdown-menu" id="${i.toString()}">
+            <li><button class="dropdown-item">Seleccionar como foto de perfil</button></li>
+            <li><button class="dropdown-item">Eliminar foto</button></li>
+            </ul></div></div></td>`;
             contadorDeFotos++;
           }
       }
@@ -255,15 +274,13 @@ app.post('/upload-photo', isLoggedIn, upload.single('photo'), async (req, res)=>
   } finally{
   	//Instruccion que permite mover la foto desde el directorio users-photos hacia el subdirectorio del usuario...
     await fs.rename(`users-photos/${req.file.filename}`, `users-photos/${req.user}/${req.file.filename}`);
-  	res.redirect('/my-profile-photos');
+  	res.json({url: '/my-profile-photos'});
   }
 });
 app.delete('/photos', isLoggedIn, async (req, res)=>{
   try{
-    for (let i=0; i<req.body.fotos.length; i++){
-      await fs.unlink(`./users-photos/${req.user}/${req.body.fotos[i]}`);
-    }
-    res.json({message: "Operacion exitosa!"}); //Esto seria optimo si estuviera usando un enfoque de SPA...Asi no tendria que redirigir.
+    await fs.unlink(`./users-photos/${req.user}/${req.body.foto}`);
+    res.json({message: "/my-profile-photos"}); //Para redirigir al usuario.
     //res.redirect('my-photos');
   } catch(err){
     res.json({message: "Operacion fallida, intentelo de nuevo."});

@@ -4,6 +4,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
   <meta charset="utf-8">
   <link rel="stylesheet" href="/css/bootstrap.min.css" />
+  <script src="/js/bootstrap.bundle.min.js"></script>
   <title></title>
   <style>
     img{
@@ -39,186 +40,11 @@ al final-->
 <div class="img-modal"></div> <!--Se genera una ventana modal cuando el usuario hace click en una  foto-->
 <img src="" id="photoView"> <!--Para la vista del recorte de la foto que va a subir el usuario-->
 <input  class="form-control" type="file" id="photo" name="photo">
-<button id="eliminar" class="btn btn-danger" type="button">Eliminar</button>
-<button id="fotoDePerfil" class="btn-success" type="button">Seleccionar foto de perfil</button>
 <table class="table">
   <tbody>
     <!--Fotos-->
   </tbody>
 </table>
-<script>
-  function formatearSrc(src){ //Esta funcion se encarga de formatear el src de las imagenes con el fin de enviar solo el nombre de la imagen.
-    //El nombre esta despues del primer '/'
-    console.log(src);
-    let name='', contador=0;
-    for (let i=0; i<src.length; i++){
-      if (src[i]==='/'){
-        contador++;
-      }
-      if (src[i]!=='/' && contador===4){
-        name+=src[i];
-      }
-    }
-    return name;
-  }
-  /*La siguiente funcion verificara si alguna de las fotos tiene marco. Si una foto i ya lo tiene, entonces se le borrara
-  y se le agregara el marco a la foto recibida como segundo parametro. En caso de no haber fotos con marcos, se procede de la 
-  misma manera.
-  */
-  function fotoSeleccionada(arrayFotosDePerfil, fotoASeleccionar){
-    for (let i=0; i<arrayFotosDePerfil.length; i++){
-      if (arrayFotosDePerfil[i].style.borderColor='green'){ //Son tres parametros de border, pero enrealidad con confirmar uno es suficiente.
-        arrayFotosDePerfil[i].style.borderColor=null;
-        arrayFotosDePerfil[i].style.borderWidth=null;
-        arrayFotosDePerfil[i].style.borderStyle=null;
-      }
-    }
-    fotoASeleccionar.style.borderColor='green';
-    fotoASeleccionar.style.borderWidth='5px';
-    fotoASeleccionar.style.borderStyle='solid';
-  }
-  function borrarMarcos(arrayFotosDePerfil){
-  	for (let i=0; i<arrayFotosDePerfil.length; i++){
-      arrayFotosDePerfil[i].style.borderColor=null;
-      arrayFotosDePerfil[i].style.borderWidth=null;
-      arrayFotosDePerfil[i].style.borderStyle=null;
-    }
-  }
-  //Codigo para establecer la foto de perfil.
-  let fotoDePerfil=document.getElementById('fotoDePerfil');
-  fotoDePerfil.addEventListener('click', ()=>{
-    let fotos=document.querySelectorAll('img');
-    fotos.forEach(foto=>{
-      foto.addEventListener('click', ()=>{
-        fotoSeleccionada(fotos, foto);
-      });
-    });
-    let confirmarFotoDePerfil=document.createElement('button');
-    confirmarFotoDePerfil.textContent='Confirmar foto de perfil';
-    document.querySelector('body').appendChild(confirmarFotoDePerfil);
-    confirmarFotoDePerfil.addEventListener('click', async ()=>{
-      let fotos=document.querySelectorAll('img');
-      let i=0, flag=false, nuevaFotoDePerfil;
-      while (i<fotos.length && !flag){
-        if (fotos[i].style.borderColor==='green'){
-          flag=true;
-          nuevaFotoDePerfil={src: formatearSrc(fotos[i].src)};
-        }
-        i++;
-      }
-      if (flag){
-        /*Envio una solicitud para establecer la foto de perfil. Procedere de la siguiente manera:
-        En formato json envio el src de la imagen. El servidor se encargara de añadir al src una "etiqueta"
-        que servira para identificarla como la foto de perfil. La etiqueta sera "etiquetaFotoDePerfil!x#" y tan solo se
-        sumara al src(src+etiqueta). Pero claro, antes debo asegurarme de borrar la etiqueta de la anterior foto de perfil.
-        Si no hay etiqueta establecida, entonces procedere de la misma manera.*/
-        let request=await fetch('/change-profile-photo', {
-        method: 'put',
-        headers: {'Content-Type': 'application/json'}, 
-        body: JSON.stringify(nuevaFotoDePerfil)});
-        let response=await request.json();
-        if (response.message==='Foto de perfil cambiada!'){
-          /*Selecciono la foto y cambio su src para agregarle la constante. Asi puedo disminuir el error. Una manera que se me 
-          ocurre de identifiar la foto de perfil actual (para que al usuario no se elvide) al momento de elegir una nueva
-          foto de perfil es agregar un marco de algun color diferente al verde que identifique la foto de perfil actual*/
-          alert('Foto de perfil cambiada!');
-        } else{
-          alert('Error, intentelo de nuevo. Posible causa: Esta intentado cambiar su foto de perfil con su foto de perfil actual o es un error del sistema. En el segundo caso contacte con soporte.');
-        }
-      }
-    });
-    let cancelar=document.createElement('button');
-    cancelar.textContent='Cancelar';
-    document.querySelector('body').appendChild(cancelar);
-    cancelar.addEventListener('click', ()=>{
-      //Elimino los eventos de las imagenes (añadir marco) y elimino los respectivos botones.
-      let fotos=document.querySelectorAll('img');
-      borrarMarcos(fotos);
-      for (let i=0; i<fotos.length; i++){
-        fotos[i].addEventListener('click', ()=>{
-          //Creo marcos nulos, asi sustituyo a los eventos que añaden un marco verde.
-          fotos[i].style.borderColor=null;
-          fotos[i].style.borderWidth=null;
-          fotos[i].style.borderStyle=null;
-        });
-      }
-      document.querySelector('body').removeChild(confirmarFotoDePerfil);
-      document.querySelector('body').removeChild(cancelar);
-    });
-  });
-  //Ahora el codigo de borrado de fotos...
-  let botonDeEliminacion=document.getElementById('eliminar');
-  botonDeEliminacion.addEventListener('click', async ()=>{
-    //Seleccionare todos los inputs para verficiar si ya han sido creados checkboxs...
-    let inputs=document.querySelectorAll('input'), bandera=false;
-    for (let i=0; i<inputs.length; i++){
-      if (inputs[i].type==='checkbox'){
-        bandera=true;
-      }
-    }
-    if (!bandera){
-      let table=document.querySelector('table'), cuerpoTabla=table.firstElementChild, filas=cuerpoTabla.children;
-      for (let i=0; i<filas.length; i++){
-        let filaActual=filas[i], columnas=filaActual.children;
-        for (let j=0; j<columnas.length; j++){
-          let casilla=document.createElement('input');
-          casilla.type='checkbox';
-          columnas[j].appendChild(casilla);
-        }
-      }
-      let botonConfirmar=document.createElement('button');
-      botonConfirmar.textContent='Confirmar';
-      document.querySelector('body').appendChild(botonConfirmar);
-      botonConfirmar.addEventListener('click', async ()=>{
-        /*Este codigo tendra la funcion de seleccionar las imagenes que el usuario selecciono para ser eliminadas.
-        Se enviara al servidor en formato json las rutas de las imagenes para que el servidor se encargue de borrarlas.*/
-        let fotos=document.querySelectorAll('img'), inputs=document.querySelectorAll('input'), checkboxes=[];
-        console.log(fotos);
-        inputs.forEach(input=>{
-          if (input.type==='checkbox'){
-            checkboxes.push(input);
-          }
-        });
-        let fotosAEliminar=[];
-        for (let i=0; i<checkboxes.length; i++){ 
-          if (checkboxes[i].checked){
-            fotosAEliminar.push(formatearSrc(fotos[i+2].src)); //i+2 porque las primeras dos fotos son la imagen modal y el preview de recorte
-          }
-        }
-        let objetoFotos={
-          fotos: fotosAEliminar
-        };
-        let peticion=await fetch('/photos', {
-          method:'delete', 
-          headers: {'Content-Type': 'application/json'}, 
-          body: JSON.stringify(objetoFotos)
-        });
-        let respuesta=await peticion.json();
-        if (respuesta.message==='Operacion fallida, intentelo de nuevo.'){
-          alert('Operacion fallida, intentelo de nuevo.');
-        } else{
-          alert('Fotos borradas!');
-        }
-      });
-      let botonEliminar=document.createElement('button');
-      botonEliminar.textContent='Cancelar';
-      document.querySelector('body').appendChild(botonEliminar);
-      botonEliminar.addEventListener('click', ()=>{
-        //Al ser los checkbox anexados como hijos de las imagenes, entonces se procede a eliminarlos.
-        let table=document.querySelector('table'), cuerpoTabla=table.firstElementChild, filas=cuerpoTabla.children;
-        for (let i=0; i<filas.length; i++){
-          console.log(filas);
-          let filaActual=filas[i], columnas=filaActual.children;
-          for (let j=0; j<columnas.length; j++){
-            columnas[j].removeChild(columnas[j].children[1]); //El checkbox es el segundo hijo de la columa de la fila.
-          }
-          document.querySelector('body').removeChild(botonConfirmar);
-          document.querySelector('body').removeChild(botonEliminar);
-        }
-      });
-    }
-  });
-</script>
 <script src="js/modal.js"></script>
 <script>
   initModal("img-modal"); //Initialize Modal by class of modal
@@ -238,19 +64,12 @@ al final-->
     let vanilla=new Croppie(photoView, {  //ejemplo de vanilla croppie
       viewport: { width: 300, height: 300 },
       boundary: { width: 500, height: 500, type: 'square'},
-      //showZoomer: true,
     });
     let enviarFoto=document.createElement('button');
     enviarFoto.textContent='Agregar foto';
-    let cancelar=document.createElement('button');
+    let cancelar=document.createElement('a');
     cancelar.textContent='X';
     enviarFoto.className='btn btn-primary';
-    cancelar.className='btn btn-danger';
-    //Una solucion que podria usar seria implentar una ruta al momento de que el usuario pulse "X", una ruta hacia la misma pagina...
-    /*cancelar.addEventListener('click', ()=>{
-      document.querySelector('body').removeChild(vanilla.element);
-      document.querySelector('body').removeChild(vanilla.elements);
-    });*/
     enviarFoto.style.position='fixed';
     enviarFoto.style.top='20px';
     enviarFoto.style.left='585px';
@@ -258,6 +77,9 @@ al final-->
     cancelar.style.position='fixed';
     cancelar.style.top='20px';
     cancelar.style.left='700px';
+    //cancelar.id='cancel-photo';
+    cancelar.href='/my-profile-photos';
+    cancelar.style.color='red';
     document.querySelector('body').appendChild(enviarFoto);
     document.querySelector('body').appendChild(cancelar);
     vanilla.element.style.position='fixed';
@@ -271,12 +93,101 @@ al final-->
           method: 'POST',
           body: formdata
         });
+        let response=await request.json();
+        /*Y a partir de aqui hago un copy paste de un codigo que vi en stack overflow para redireccionar despues de recibir
+        una respuesta de una solicitud fetch*/
+        // Sets the new location of the current window.
+        window.location=response.url;
+        // Sets the new href (URL) for the current window.
+        window.location.href=response.url;
+        // Assigns a new URL to the current window.
+        window.location.assign(response.url);
+        // Replaces the location of the current window with the new one.
+        window.location.replace(response.url);
+        // Sets the location of the current window itself.
+        self.location=response.url;
+        // Sets the location of the topmost window of the current window.
+        top.location=response.url;
       });
     });
   });
-  /*Creo que al momento en que aparezca la foto para recortar, le tendre que añadir dos botones: Enviar foto y 
-  cancelar*/
 </script>
+
+<script>
+  /*Seleccion de foto de perfil y borrado de fotos.*/
+    function formatearSrc(src){ //Esta funcion se encarga de formatear el src de las imagenes con el fin de enviar solo el nombre de la imagen.
+    //El nombre esta despues del primer '/'
+    console.log(src);
+    let name='', contador=0;
+    for (let i=0; i<src.length; i++){
+      if (src[i]==='/'){
+        contador++;
+      }
+      if (src[i]!=='/' && contador===4){
+        name+=src[i];
+      }
+    }
+    return name;
+  }
+  let opcionesFotos=document.querySelectorAll('button');
+  opcionesFotos.forEach(opcion=>{
+  	/*Selecciono el id del nodo padre del boton, que en este caso es un numero relacionado a la propia foto 
+      (la foto tiene como id "photo"+"numero") , para luego seleccionar la foto correspondiente en cada uno de los casos, 
+      con el fin de enviar el src para que la foto sea eliminada o establecida como foto de perfil.*/
+    if (opcion.textContent==='Seleccionar como foto de perfil'){
+      opcion.addEventListener('click', async ()=>{
+        let numeroDeFoto=opcion.parentNode.parentNode.id;
+        let fotoSeleccionada=document.getElementById('photo'+numeroDeFoto);
+        nuevaFotoDePerfil={src: formatearSrc(fotoSeleccionada.src)};
+         /*Envio una solicitud para establecer la foto de perfil. Procedere de la siguiente manera:
+        En formato json envio el src de la imagen. El servidor se encargara de añadir al src una "etiqueta"
+        que servira para identificarla como la foto de perfil. La etiqueta sera "etiquetaFotoDePerfil!x#" y tan solo se
+        sumara al src(src+etiqueta). Pero claro, antes debo asegurarme de borrar la etiqueta de la anterior foto de perfil.
+        Si no hay etiqueta establecida, entonces procedere de la misma manera.*/
+        let request=await fetch('/change-profile-photo', {
+        method: 'put',
+        headers: {'Content-Type': 'application/json'}, 
+        body: JSON.stringify(nuevaFotoDePerfil)});
+        let response=await request.json();
+        if (response.message==='Foto de perfil cambiada!'){
+          /*Selecciono la foto y cambio su src para agregarle la constante. Asi puedo disminuir el error. Una manera que se me 
+          ocurre de identifiar la foto de perfil actual (para que al usuario no se elvide) al momento de elegir una nueva
+          foto de perfil es agregar un marco de algun color diferente al verde que identifique la foto de perfil actual*/
+          alert('Foto de perfil cambiada!');
+        } else{
+          alert('Error, intentelo de nuevo. Posible causa: Esta intentado cambiar su foto de perfil con su foto de perfil actual o es un error del sistema. En el segundo caso contacte con soporte.');
+        }
+      });
+    } else if (opcion.textContent==='Eliminar foto'){
+      opcion.addEventListener('click', async ()=>{
+        let numeroDeFoto=opcion.parentNode.parentNode.id;
+        let fotoAEliminar=document.getElementById('photo'+numeroDeFoto);
+        fotoAEliminar=formatearSrc(fotoAEliminar.src);
+        let objetoFoto={
+          foto: fotoAEliminar
+        };
+        let request=await fetch('/photos', {
+          method:'delete', 
+          headers: {'Content-Type': 'application/json'}, 
+          body: JSON.stringify(objetoFoto)
+        });
+        let response=await request.json();
+        if (response.message==='Operacion fallida, intentelo de nuevo.'){
+          alert('Operacion fallida, intentelo de nuevo.');
+        } else{
+          //Refresco la vista con la ruta recibida. En este caso la url es el valor de message.
+          window.location=response.message;
+          window.location.href=response.message
+          window.location.assign(response.message);
+          window.location.replace(response.message);
+          self.location=response.message;
+          top.location=response.message;
+        }
+      });
+    }
+  });
+</script>
+
 </body>
 </html>
 
