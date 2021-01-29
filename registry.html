@@ -10,11 +10,22 @@
       width: 400px;
     }
   </style>
+   <style>
+  body{
+    background-image:url('front-image.jpg');
+    background-attachment:fixed;
+    background-repeat: no-repeat;
+    background-size: cover;
+  }
+  h2, p, label, li{
+    color: white;
+    font-family: monospace;
+  }
+  </style>
 </head>
 
 <body>
-	<h2>"nombre del sitio"</h2>
-	<h3>Registro</h3>
+	<h2>majorandminor</h2>
 	<form method="post" action="/signin">
 
     <label for="inputEmail4">Email</label>
@@ -44,14 +55,14 @@
     <input type="radio" name="sex" value="woman">
     
     <label for="age">Edad</label>
-    <select name="age" id="age" class="form-control"> <!--Para seleccionar edad obligatoriamente debes seleccionar antes sexo-->
+    <select name="age" id="age" class="form-select"> <!--Para seleccionar edad obligatoriamente debes seleccionar antes sexo-->
     </select>
 
     <label for="pais">Pais</label>
-    <select name="country" id="country" class="form-control">
+    <select name="country" id="country" class="form-select">
     </select>
     
-    <button type="submit" class="btn btn-success">Registrarse</button>
+    <button type="submit" class="btn btn-success">Sign in</button>
 </form>
 
 <script>

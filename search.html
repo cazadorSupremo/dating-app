@@ -10,6 +10,16 @@
       max-width: 100%;
       height: auto;
     }
+    body{
+      background-image:url('front-image.jpg');
+      background-attachment:fixed;
+      background-repeat: no-repeat;
+      background-size: cover;
+    }
+    h2, p, label, li, th, td{
+      color: white;
+      font-family: monospace;
+    }
   </style>
 </head>
 
@@ -27,7 +37,7 @@
 <label for="customRange1">Rango de edad</label>
 <input type="range" class="form-range" id="age" name='edad' min="35" max="90" step="1" onchange="updateAge(this.value);">
 <p id="valorEdad"></p>
-<select class="form-control" id="country" name="pais">
+<select class="form-select" id="country" name="pais">
   <option>Todos los paises</option>
 </select>
 <input id="online" type="checkbox">

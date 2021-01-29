@@ -7,3 +7,6 @@ conversaciones entre dos usuarios dados. Entonces el nombre de tal archivo sera 
 del usuario con otro. 
 En fin, como un dato curioso, si por ejemplo, tengo 500 usuarios, la cantidad de archivos de chats que puede haber es 
 499+498+497+...1
+Bueno, para evitar la redundancia, guardare todos los chats en una carpeta generica, esto por el motivo de no tener
+que duplicar archivos, como "chat con usuario j" en la subcarpeta del usuario i y "chat con usuario i" en la subcarpeta del usuario
+j.

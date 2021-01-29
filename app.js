@@ -8,7 +8,8 @@ const LocalStrategy=require('passport-local').Strategy;
 const fs=require('fs').promises;
 const multer=require('multer');
 const upload=multer({dest: 'users-photos'});
-//const bcrypt=require('bcryptjs') //para hashear las contraseñas (usar bcrypt, basado en c++, ya que es mucho mas rapido)
+const http=require('http').Server(app);
+const io=require('socket.io')(http);
 const {Client}=require('pg');
 const client=new Client({
   user: 'postgres',
@@ -128,7 +129,7 @@ async function rellenarPlantillaConDatos(rutaDePlantilla, idUsuario, usuarioSoli
       plantilla=plantilla.replace('<!--editar perfil o chat-->', '<a href="edit-profile">Editar perfil</a>');
     } else{
       plantilla=plantilla.replace('<!--Fotos del mismo o fotos de otro usuario-->', '<a id="photos" href="other-user-profile-photos">Fotos</a>');
-      plantilla=plantilla.replace('<!--editar perfil o chat-->', '<a href="chat">Mensaje</a>')
+      plantilla=plantilla.replace('<!--editar perfil o chat-->', '<a id="chat" href="chat">Mensaje</a>')
     }
     let result=await client.query(`SELECT * FROM users WHERE username='${idUsuario}'`);
     plantilla=plantilla.replace('foto de perfil', srcFotoDePerfil);
@@ -420,6 +421,34 @@ app.get('/other-user-profile-photos', async (req, res)=>{
   } catch(err){
   	res.json(`Ha ocurrido un error al visualizar las fotos del usuario ${req.query.userName}`);
   }
+});
+
+app.get('/chat', async (req, res)=>{
+  /*Entonces, el proceso es el siguiente:
+  Primero obtengo la foto de perfil del usuario. 
+  Luego anexo la foto y el nombre del usuario a la plantilla de chat
+  Despues, busco en la carpeta chats si hay ya un historial entre los dos usuarios.
+  Si lo hay, entonces anexo todo esos mensajes a la plantilla.
+  Si no lo hay, entonces creo el archivo de texto correspondiente.
+  Envio la plantilla.
+  Fin
+  */
+  let profilePhoto=await obtenerFotoPefilUsuario(req.query.userName);
+  let plantilla=await fs.readFile('/home/freddy/Escritorio/majorandminor/chat.html', 'utf8');
+  plantilla=plantilla.replace('<!--#profilePhoto-->', `<img src="${profilePhoto}">`);
+  plantilla=plantilla.replace('<!--#username-->', `<p id="username">${req.query.userName}</p>`);
+  res.send(plantilla);
+});
+
+io.on('connection', (socket) => {
+  console.log('a user connected');
+  socket.on('chat message', (msg) => {
+    io.emit('chat message', msg);
+  });
+  socket.on('disconnect', () => {
+    console.log('user disconnected');
+    io.emit('user-disconnect', 'Un usuario se ha desconectado');
+  });
 });
 
 app.listen(port, '0.0.0.0', ()=>{

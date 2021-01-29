@@ -10,6 +10,16 @@
       max-width: 100%;
       height: auto;
     }
+    body{
+      background-image:url('front-image.jpg');
+      background-attachment:fixed;
+      background-repeat: no-repeat;
+      background-size: cover;
+    }
+    h2, p, label, li, th, td{
+      color: white;
+      font-family: monospace;
+    }
   </style>
 </head>
 
@@ -86,6 +96,8 @@
   let linkPhotos=document.getElementById('photos');
   let userName=document.getElementById('userName');
   linkPhotos.href=`other-user-profile-photos?userName=${userName.textContent}`;
+  let chat=document.getElementById('chat');
+  chat.href=`chat?userName=${userName.textContent}`;
 </script>
 
 </body>
