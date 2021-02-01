@@ -137,23 +137,43 @@ async function rellenarPlantillaConDatos(rutaDePlantilla, idUsuario, usuarioSoli
     plantilla=plantilla.replace('Nombre de usuario', result.rows[0].username);
     let nameAndLastName=result.rows[0].name+' '+result.rows[0].lastname;
     plantilla=plantilla.replace('Nombre y Apellido', nameAndLastName);
-    plantilla=plantilla.replace('Encabezado', result.rows[0].header);
-    plantilla=plantilla.replace('valor', result.rows[0].heigth);
-    plantilla=plantilla.replace('valor', result.rows[0].bodytype);
-    plantilla=plantilla.replace('valor', result.rows[0].ethnicgroup);
-    plantilla=plantilla.replace('valor', result.rows[0].maritalstatus);
-    plantilla=plantilla.replace('valor', result.rows[0].sons);
-    plantilla=plantilla.replace('valor', result.rows[0].housingsituation); //Por alguna razon, postgresql no guarda caracteres del tipo "minusculaMayuscula"
-    plantilla=plantilla.replace('valor', result.rows[0].educationallevel);
-    plantilla=plantilla.replace('valor', result.rows[0].work);
-    plantilla=plantilla.replace('valor', result.rows[0].smokes);
-    plantilla=plantilla.replace('valor', result.rows[0].drink);
-    plantilla=plantilla.replace('Descripcion', result.rows[0].description);
+    plantilla=plantilla.replace('Encabezado', result.rows[0].header===null? '' : result.rows[0].header);
+    plantilla=plantilla.replace('valor', result.rows[0].heigth===null? '' : result.rows[0].heigth);
+    plantilla=plantilla.replace('valor', result.rows[0].bodytype===null? '' : result.rows[0].bodytype);
+    plantilla=plantilla.replace('valor', result.rows[0].ethnicgroup===null? '' : result.rows[0].ethnicgroup);
+    plantilla=plantilla.replace('valor', result.rows[0].maritalstatus===null? '' : result.rows[0].maritalstatus);
+    plantilla=plantilla.replace('valor', result.rows[0].sons? 'Yes' : 'No');
+    plantilla=plantilla.replace('valor', result.rows[0].housingsituation===null? '' : result.rows[0].housingsituation); 
+    plantilla=plantilla.replace('valor', result.rows[0].educationallevel===null? '' : result.rows[0].educationallevel);
+    plantilla=plantilla.replace('valor', result.rows[0].work? 'Yes' : 'No');
+    plantilla=plantilla.replace('valor', result.rows[0].smokes? 'Yes' : 'No');
+    plantilla=plantilla.replace('valor', result.rows[0].drink? 'Yes' : 'No');
+    plantilla=plantilla.replace('Descripcion', result.rows[0].description===null? '' : result.rows[0].description);
     //Faltan mas datos, pero por ahora me serviran de prueba.
     return plantilla;
   } catch(err){
   	return 'Error';
   }
+}
+async function readChatFile(usernameA, usernameB, templateOrWriteMessage){
+  let content;
+  try{
+    content=await fs.readFile(`chats/${usernameA+'-'+usernameB}.txt`, 'utf8');
+    if (templateOrWriteMessage){
+      return content;
+    }
+    return usernameA+'-'+usernameB;
+  } catch(err){
+    try{
+      content=await fs.readFile(`chats/${usernameB+'-'+usernameA}.txt`, 'utf8');
+      if (templateOrWriteMessage){
+        return content;
+      }
+      return usernameB+'-'+usernameA;
+    } catch(err){
+      return '';
+     }
+   }
 }
 //app.use(passport.initialize());
 app.get('/', (req, res)=>{
@@ -355,7 +375,7 @@ app.get('/users', async (req, res)=>{
       <p>${perfilesDeUsuarios.rows[i].age}</p></a></td>`;
       fila+='</tr>';
       datos+=fila;
-    } else if(contador===2){
+    } else if(contador===3){
       contador=0;
       fila+='</tr>';
       datos+=fila;
@@ -423,6 +443,13 @@ app.get('/other-user-profile-photos', async (req, res)=>{
   }
 });
 
+app.get('/chat-interface', async (req, res)=>{
+  /*Obtengo todos los archivos de chats que incluyan el nombre del usuario.
+  Luego, copio el ultimo mensaje escrito y la foto de cada usuario.
+  Luego pego esa informacion (+ el nombre de cada usuario correspondiente) en 
+  la plantilla  de interfaz de chat, cada uno en formato fila y como link.*/
+});
+
 app.get('/chat', async (req, res)=>{
   /*Entonces, el proceso es el siguiente:
   Primero obtengo la foto de perfil del usuario. 
@@ -436,14 +463,41 @@ app.get('/chat', async (req, res)=>{
   let profilePhoto=await obtenerFotoPefilUsuario(req.query.userName);
   let plantilla=await fs.readFile('/home/freddy/Escritorio/majorandminor/chat.html', 'utf8');
   plantilla=plantilla.replace('<!--#profilePhoto-->', `<img src="${profilePhoto}">`);
-  plantilla=plantilla.replace('<!--#username-->', `<p id="username">${req.query.userName}</p>`);
+  plantilla=plantilla.replace('<!--#username-->', `<p>${req.query.userName}</p>`);
+  plantilla=plantilla.replace('<!--hide-->', `<div id="${req.user}"></div>`); /*Este div sin contenido solo se encargara
+  de guardar el nombre del usuario como id para poder expresar el emisor de cada mensaje.*/
+  let resultChatFile=await readChatFile(req.user, req.query.userName, true);
+  if (resultChatFile!==''){
+    plantilla=plantilla.replace('<!--messages-->', resultChatFile);
+  } else{
+    try{
+      await fs.appendFile(`chats/${req.user+'-'+req.query.userName+'.txt'}`, '');
+    } catch(err){
+      console.log('Ha ocurrido un error al momento de crear un archivo de chat.');
+    }
+  }
   res.send(plantilla);
 });
-
+function getUsernameFromMsg(message){
+  let i=0, username='';
+  while(message[i]!==':'){
+    username+=message[i];
+    i++;
+  }
+  return username;
+}
 io.on('connection', (socket) => {
   console.log('a user connected');
-  socket.on('chat message', (msg) => {
+  socket.on('chat message', async (msg) => {
     io.emit('chat message', msg);
+    let resultChatFile=await readChatFile(getUsernameFromMsg(msg[0]), msg[1], false);
+    if (resultChatFile!==''){
+      try{
+        await fs.appendFile(`chats/${resultChatFile}.txt`, `<li>${msg[0]}</li>`);
+      } catch(err){
+        throw err;
+      }
+    }
   });
   socket.on('disconnect', () => {
     console.log('user disconnected');
@@ -451,6 +505,6 @@ io.on('connection', (socket) => {
   });
 });
 
-app.listen(port, '0.0.0.0', ()=>{
+http.listen(port, '0.0.0.0', ()=>{
   console.log('Aplicacion iniciada!');
 });

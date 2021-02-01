@@ -1,0 +1,6 @@
+Obtener los nombres de todos los archivos de chats.
+Filtrar con una funcion los archivos con el nombre del usuario.
+Obtener de los archivos seleccionados el ultimo mensaje.
+Obtener el nombre del otro usuario con el que el usuario chatea de cada archivo de chat.
+Con ese nombre, recuperar el src de la foto de perfil de cada usuario especificio.
+Finalmente, con cada nombre de usuario, foto de perfil y ultimo mensaje de chat, generar la interfaz de chat al usuario solicitante.

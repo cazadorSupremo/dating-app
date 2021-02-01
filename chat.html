@@ -21,7 +21,7 @@
       max-height: auto;
       width: 100px;
       height: 100px;
-       border-radius:150px;
+      border-radius:150px;
     }
   </style>
   <style>
@@ -34,7 +34,7 @@
 
       #messages { list-style-type: none; margin: 0; padding: 0; }
       #messages > li { padding: 0.5rem 1rem; }
-      #messages > li:nth-child(odd) { background: #efefef; }
+      #messages > li:nth-child(odd)
     </style>
 </head>
 
@@ -50,7 +50,10 @@
 </nav>
 <!--#profilePhoto-->
 <!--#username-->
-    <ul id="messages"></ul>
+<!--hide-->
+    <ul id="messages">
+      <!--messages-->
+    </ul>
     <form id="form" action="">
       <input id="input" autocomplete="off" /><button>Send</button>
     </form>
@@ -64,14 +67,15 @@
       form.addEventListener('submit', function(e) {
         e.preventDefault();
         if (input.value) {
-          socket.emit('chat message', `${document.getElementById('username').textContent}: ${input.value}`);
+          //Envio un array con el mensaje del usuario como primer elemento y el usuario destinataro con el segundo.
+          socket.emit('chat message', [`${document.querySelector('div').id}: ${input.value}`, document.querySelector('p').textContent]); 
           input.value='';
         }
       });
       
       socket.on('chat message', (msg)=>{
         var item=document.createElement('li');
-        item.textContent=msg;
+        item.textContent=msg[0];
         messages.appendChild(item);
         window.scrollTo(0, document.body.scrollHeight);
       });
