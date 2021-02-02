@@ -6,6 +6,7 @@ const session=require('express-session');
 const passport=require('passport');
 const LocalStrategy=require('passport-local').Strategy;
 const fs=require('fs').promises;
+const readLastLines=require('read-last-lines');
 const multer=require('multer');
 const upload=multer({dest: 'users-photos'});
 const http=require('http').Server(app);
@@ -171,7 +172,7 @@ async function readChatFile(usernameA, usernameB, templateOrWriteMessage){
       }
       return usernameB+'-'+usernameA;
     } catch(err){
-      return '';
+      return 'X';
      }
    }
 }
@@ -443,11 +444,61 @@ app.get('/other-user-profile-photos', async (req, res)=>{
   }
 });
 
+function getChatFilesUserAndTheOtherUsername(allChatFiles, username){
+  /*Esta funcion retorna una matriz de n filas y dos columnas. La primera columna contendra el nombre del archivo de chat 
+  completo, mientras que la segunda contendra el otro nombre del otro usuario, con el que el usuario solicitante esta conversando,
+  esto con el fin de no duplicar codigo haciendo una funcion que extraiga el nombre del otro usuario. El nombre del otro usuario
+  servira para obtener su misma foto de perfil y tambien pegar a cada fila de la plantilla tal nombre*/
+  let results=[];
+  for (let i=0; i<allChatFiles.length; i++){
+  	//-4 porque '.txt' son los ultimos cuatro caracteres, y eso corresponde a la extension del archivo.
+    let j=0, coincide=false, fileName=allChatFiles[i].slice(0, allChatFiles[i].length-4), contador='', theOtherUsername='';
+    while (j<fileName.length && !coincide){
+      if (fileName[j]!=='-'){
+        contador+=fileName[j];
+      } else{
+      	//Esta condicion verifica si el primer nombre de usuario coincide.
+      	contador===username? coincide=true : theOtherUsername=contador;
+      	contador=''
+      }
+      j++;
+      if (j===fileName.length){
+      	//Esta condicion verifica si el segundo nombre de usuario coincide.
+        contador===username? coincide=true : contador='';
+      }
+    }
+    if (coincide){
+      if (theOtherUsername!==''){
+        results.push([allChatFiles[i], theOtherUsername]);
+      } else{
+        theOtherUsername=fileName.slice(j, fileName.length);
+        results.push([allChatFiles[i], theOtherUsername]);
+      }
+    } 
+  }
+  return results;
+}
+
+
 app.get('/chat-interface', async (req, res)=>{
   /*Obtengo todos los archivos de chats que incluyan el nombre del usuario.
   Luego, copio el ultimo mensaje escrito y la foto de cada usuario.
   Luego pego esa informacion (+ el nombre de cada usuario correspondiente) en 
   la plantilla  de interfaz de chat, cada uno en formato fila y como link.*/
+  let chatFiles=await fs.readdir('chats');
+  let results=getChatFilesUserAndTheOtherUsername(chatFiles, req.user);
+  let profilePhotosOtherUsers=[], lastChatMessages=[], content='';
+  for (let i=0; i<results.length; i++){
+    profilePhotosOtherUsers.push(await obtenerFotoPefilUsuario(results[i][1]));
+    lastChatMessages.push(await readLastLines.read(`chats/${results[i][0]}`, 1));
+  }
+  let plantilla=await fs.readFile('/home/freddy/Escritorio/majorandminor/chat-interface.html', 'utf8');
+  for (let j=0; j<results.length; j++){
+    content+=`<tr><td><a href="chat?userName=${results[j][1]}"><img src="${profilePhotosOtherUsers[j]}"><p>${results[j][1]}
+    </p><p>${lastChatMessages[j]}</p></a></td></tr>`;
+  }
+  plantilla=plantilla.replace('<!--#Chat with other users-->', content);
+  res.send(plantilla);
 });
 
 app.get('/chat', async (req, res)=>{
@@ -467,7 +518,7 @@ app.get('/chat', async (req, res)=>{
   plantilla=plantilla.replace('<!--hide-->', `<div id="${req.user}"></div>`); /*Este div sin contenido solo se encargara
   de guardar el nombre del usuario como id para poder expresar el emisor de cada mensaje.*/
   let resultChatFile=await readChatFile(req.user, req.query.userName, true);
-  if (resultChatFile!==''){
+  if (resultChatFile!=='X'){
     plantilla=plantilla.replace('<!--messages-->', resultChatFile);
   } else{
     try{
@@ -493,7 +544,7 @@ io.on('connection', (socket) => {
     let resultChatFile=await readChatFile(getUsernameFromMsg(msg[0]), msg[1], false);
     if (resultChatFile!==''){
       try{
-        await fs.appendFile(`chats/${resultChatFile}.txt`, `<li>${msg[0]}</li>`);
+        await fs.appendFile(`chats/${resultChatFile}.txt`, `<li>${msg[0]}</li>\n`);
       } catch(err){
         throw err;
       }
