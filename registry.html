@@ -29,30 +29,30 @@
 	<form method="post" action="/signin">
 
     <label for="inputEmail4">Email</label>
-    <input type="email" class="form-control" name="email">
+    <input type="email" class="form-control" name="email" required>
 
     <label for="inputPassword4">Username</label>
-    <input type="text" class="form-control" name="username">
+    <input type="text" class="form-control" name="username" required>
 
     <label for="inputPassword4">Password</label>
     <input type="password" class="form-control" name="password">
 
     <label for="repetirContraseña">Repita la contraseña</label>
-    <input type="password" class="form-control" name="repeatPassword">
+    <input type="password" class="form-control" name="repeatPassword" required>
 
 
     <label for="nombre">Nombre</label>
-    <input type="text" class="form-control" name="name">
+    <input type="text" class="form-control" name="name" required>
 
     <label for="apellido">Apellido</label>
-    <input type="text" class="form-control" name="lastName">
+    <input type="text" class="form-control" name="lastName" required>
 
     <label for="hombre">Hombre</label>
-    <input type="radio" name="sex" value="man">
+    <input type="radio" name="sex" value="man" required>
     
 
     <label for="mujer">Mujer</label>
-    <input type="radio" name="sex" value="woman">
+    <input type="radio" name="sex" value="woman" required>
     
     <label for="age">Edad</label>
     <select name="age" id="age" class="form-select"> <!--Para seleccionar edad obligatoriamente debes seleccionar antes sexo-->
@@ -62,11 +62,14 @@
     <select name="country" id="country" class="form-select">
     </select>
     
+    <label>Certifico que tengo más de 18 años y acepto los términos de uso, la política de privacidad y la política de cookies.</label>
+    <input type="checkbox" required>
+
     <button type="submit" class="btn btn-success">Sign in</button>
 </form>
 
 <script>
-  let paises=['Argentina', 'Bolivia', 'Brasil', 'Canada', 'Chile', 'Colombia', 'Costa Rica', 'Ecuador', 'Estados Unidos', 'Inglaterra', 'Mexico', 'Panama', 'Paraguay', 'Peru', 'Uruguay', 'Venezuela'];
+  let paises=['Argentina', 'Bolivia', 'Brasil', 'Canada', 'Chile', 'Colombia', 'Costa Rica', 'Cuba', 'Ecuador', 'El Salvador', 'Estados Unidos', 'Honduras', 'Inglaterra', 'Mexico', 'Nicaragua', 'Panama', 'Paraguay', 'Peru', 'Republica dominicana', 'Uruguay', 'Venezuela'];
   function removerNodosHijos(nodoPadre){
     while (nodoPadre.children.length>0){
       nodoPadre.removeChild(nodoPadre.lastChild);

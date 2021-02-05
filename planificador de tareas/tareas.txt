@@ -16,24 +16,21 @@ el modulo bcrypt.
 9-Implementar la verificacion por correo electronico con alguna libreria de npm o implementando una solucion 
 propia con el modulo nodemailer.
 10-Cambiar el idioma de la aplicacion (de español a ingles, ya que mis usuarios primordiales seran de USA).
-11-Implementar el pago por stripe (contactar con ziptofaf o con alguien que pueda proveer la tarjeta de credito). Supongo
-que tendria que implementar un certificado https (implementar comunicacion cifrada con tls) para evitar que los cibercriminales
-roben los datos de los usuarios al momento de pagar.
-12-Implementar la funcion "configuracion de cuenta", donde necesito proveer las siguientes funciones a mis usuarios:
+11-Implementar la funcion "configuracion de cuenta", donde necesito proveer las siguientes funciones a mis usuarios:
 -Cambiar contraseña.
 -Eliminar cuenta.
-13-Por si el usuario olvida su contraseña, implementar la funcion "recuperar contraseña", donde el usuario
+12-Por si el usuario olvida su contraseña, implementar la funcion "recuperar contraseña", donde el usuario
 podra proveer el correo electronico donde recibira la nueva contraseña que le proveera el servidor al usuario para iniciar
 sesion.
 
 -Hasta aqui lo prioritario, luego, despues de lanzar la aplicacion, implementar las siguientes funcionalidades:
 
-14-Crear un programa de reconocimiento de imagenes (machine learning) que permita discriminar cuando el usuario
+13-Crear un programa de reconocimiento de imagenes (machine learning) que permita discriminar cuando el usuario
 sube una foto desnudo. Si es asi, entonces se rechaza la foto y se le envia el mensaje al usuario. Si no, se 
 sube la foto al servidor.
-15-En relacion a lo anterior, podria implementar una funcion extra a la aplicacion que permita hacer que una foto 
+14-En relacion a lo anterior, podria implementar una funcion extra a la aplicacion que permita hacer que una foto 
 sea privada, y el usuario pueda autorizar si otro usuario puede verla. Esta sera parte de la membresia premium.
-16-Implementar la funcion "quien visito mi perfil" y "quien me dio me gusta". Esta funcion sera en tiempo real.
+15-Implementar la funcion "quien visito mi perfil" y "quien me dio me gusta". Esta funcion sera en tiempo real.
 Tambien si el usuario desea saber quien visito su perfil  y quien le dio me gusta, debera pagar una membreseia premium.
 
 En cuanto al punto 14, como todavia no he aprendido machine learning, ni mucho menos se como hacer un programa

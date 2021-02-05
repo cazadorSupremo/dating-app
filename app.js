@@ -11,6 +11,8 @@ const multer=require('multer');
 const upload=multer({dest: 'users-photos'});
 const http=require('http').Server(app);
 const io=require('socket.io')(http);
+const bcrypt=require('bcrypt');
+const saltRounds=10;
 const {Client}=require('pg');
 const client=new Client({
   user: 'postgres',
@@ -19,7 +21,7 @@ const client=new Client({
   host: 'localhost',   //Todos estos parametros, si no se declaran, se establecen por defecto (ver documentacion. En caso del host, el por defecto tambien es localhost, pero lo incluyo por inercia)
 });
 client.connect();
-app.use(session({ secret: "secret", resave: false, saveUninitialized: true })); //¿Porque cats?
+app.use(session({ secret: "secret", resave: false, saveUninitialized: true })); 
 app.use(passport.initialize());
 app.use(passport.session());
 app.use(express.json());
@@ -36,19 +38,25 @@ passport.use('local-login', new LocalStrategy({
   passwordField: 'password'
   }, async (username, password, done)=>{
      try{
-       let consultaDeUsuario=await client.query(`SELECT * FROM users WHERE email='${username}' AND password='${password}'`);
-       if (consultaDeUsuario.rows.length===1){
-         let newUser={id: consultaDeUsuario.rows[0].username};
-         return done(null, newUser);
+       let consultaDeContraseña=await client.query(`SELECT password FROM users WHERE email='${username}'`);
+       if (consultaDeContraseña.rows.length===1){
+         bcrypt.compare(password, consultaDeContraseña.rows[0].password, async (err, result)=>{
+       	   if (err) throw err;
+           if (result){
+           	 //Consulto el nombre de usuario para enviar el id con el objetivo de serializar. El username sera el req.user
+           	 let consultaDeUsername=await client.query(`SELECT username FROM users WHERE email='${username}'`);
+             let newUser={id: consultaDeUsername.rows[0].username};
+             return done(null, newUser);
+           }
+           return done(null, false, {message: 'Usuario o contraseña incorrecta!'});
+         });
        } else{
-         return done(null, {message: 'Usuario no existe!'});
+       	 return done(null, false, {message: 'Usuario o contraseña incorrecta!'});
        }
      } catch(err){
        console.log('Error en el inicio de sesion del usuario.');
        return done(err);
-     } /*finally{
-       client.end();
-     }*/
+     }
 }));
 passport.serializeUser((user, done)=>{
   return done(null, user.id);
@@ -64,9 +72,7 @@ passport.deserializeUser(async (id, done)=>{
   } catch(err){
     console.log('Error en la desearilizacion del usuario.');
     return done(err, id);
-  } /*finally{
-    client.end();
-  }*/
+  }
 });
 function isLoggedIn(req, res, next) {
 	// if user is authenticated in the session, carry on
@@ -134,7 +140,8 @@ async function rellenarPlantillaConDatos(rutaDePlantilla, idUsuario, usuarioSoli
     }
     let result=await client.query(`SELECT * FROM users WHERE username='${idUsuario}'`);
     plantilla=plantilla.replace('foto de perfil', srcFotoDePerfil);
-    plantilla=plantilla.replace('Pais, Estado, Ciudad', result.rows[0].country); //Por ahora solo estoy usando el pais...
+    plantilla=plantilla.replace('<!--online-->', colocarCirculoOnline(result.rows[0].online));
+    plantilla=plantilla.replace('Pais, Estado, Ciudad', result.rows[0].country);
     plantilla=plantilla.replace('Nombre de usuario', result.rows[0].username);
     let nameAndLastName=result.rows[0].name+' '+result.rows[0].lastname;
     plantilla=plantilla.replace('Nombre y Apellido', nameAndLastName);
@@ -176,61 +183,101 @@ async function readChatFile(usernameA, usernameB, templateOrWriteMessage){
      }
    }
 }
-//app.use(passport.initialize());
 app.get('/', (req, res)=>{
   if (req.isAuthenticated()){
     res.redirect('/my-profile');
   } else{
-    res.sendFile('/home/freddy/Escritorio/majorandminor/index.html');
+    res.sendFile(__dirname+'/index.html');
   }
 });
 app.get('/registry', (req, res)=>{
-  res.sendFile('/home/freddy/Escritorio/majorandminor/registry.html');
+  res.sendFile(__dirname+'/registry.html');
 });
-app.post('/signin', async (req, res)=>{ /*Esta es una manera insegura de registrar usuarios en base de datos.
-Necesito validar y sanitizar los datos, y aparte de eso, implementar la verificacion por correo electronico.*/
+
+app.get('/succesful-sign-up', (req, res)=>{
+  res.sendFile(__dirname+'/successful-sign-up.html');
+});
+
+app.get('/error:sign-up-failed', (req, res)=>{
+  res.sendFile(__dirname+'/error:sign-up-failed.html');
+});
+
+app.get('/ToS', (req, res)=>{
+  res.sendFile(__dirname+'/ToS-and-privacy-policy/ToS.html');
+});
+app.get('/privacy-policy', (req, res)=>{
+  res.sendFile(__dirname+'/ToS-and-privacy-policy/privacy-policy.html');
+});
+app.post('/signin', async (req, res)=>{
   if (req.body.sex==='man'){
     req.body.sex=1;
   } else {
   	req.body.sex=0;
   }
   try{
-    let registroDeNuevoUsuario=`INSERT INTO users (email, password, username, name, lastName, sex, age, country) values('${req.body.email}', '${req.body.password}', 
-    '${req.body.username}', '${req.body.name}', '${req.body.lastName}', '${req.body.sex}', '${req.body.age}', '${req.body.country}')`;
-    await client.query(registroDeNuevoUsuario);
-    console.log('Nuevo usuario registrado');
-    res.redirect('/');
+  	//Compruebo si ya esta ese correo o nombre de usuario registrado.
+  	let comprobacionDeEmail=await client.query(`SELECT EXISTS(SELECT * FROM users WHERE email='${req.body.email}')`);
+  	let comprobacionDeUsername=await client.query(`SELECT EXISTS (SELECT * FROM users WHERE username='${req.body.username}')`);
+  	console.log(comprobacionDeEmail.rows[0].exists);
+  	console.log(comprobacionDeUsername.rows[0].exists);
+  	if (!comprobacionDeEmail.rows[0].exists && !comprobacionDeUsername.rows[0].exists){
+      bcrypt.genSalt(saltRounds, (err, salt)=>{
+        if (err) throw err;
+        bcrypt.hash(req.body.password, salt, async (err, hash)=>{
+          if (err) throw err;
+          //Hasheo y agrego salt a la contraseña para almacenarla en la base de datos.
+          let hashedPassword=hash;
+          //Luego inserto la contraseña hasheada junto al resto de los datos a la base de datos para crear al nuevo usuario.
+          let registroDeNuevoUsuario=`INSERT INTO users (email, password, username, name, lastName, sex, age, country) values('${req.body.email}', '${hashedPassword}', 
+            '${req.body.username}', '${req.body.name}', '${req.body.lastName}', '${req.body.sex}', '${req.body.age}', '${req.body.country}')`;
+          await client.query(registroDeNuevoUsuario);
+          console.log('Nuevo usuario registrado');
+          res.redirect('/succesful-sign-up');
+        });
+      });
+  	} else{
+  	  res.redirect('/error:sign-up-failed');
+  	}
   } catch(err){
     console.log(err);
-    res.redirect('/registry');
-  } /*finally{
-    client.end();
-  }*/
+    res.redirect('/error:sign-up-failed');
+  }
 });
 //Inicio de sesion del usuario.
 app.post('/login', passport.authenticate('local-login', {
-  successRedirect: '/my-profile',
-  failureRedirect: '/'
+  successRedirect: '/online',
+  failureRedirect: '/error:incorrect-data',
 }));
-app.get('/logout', (req, res) => {
+
+app.get('/error:incorrect-data', (req, res)=>{
+  res.sendFile(__dirname+'/error:incorrect-data.html');
+});
+
+app.get('/online', isLoggedIn, async (req, res)=>{
+  await client.query(`UPDATE users SET online=true WHERE username='${req.user}'`);
+  res.redirect('/my-profile');
+});
+
+app.get('/logout', async (req, res)=>{
+  await client.query(`UPDATE users SET online=false WHERE username='${req.user}'`);
   req.logout();
   res.redirect("/");
 });
 app.get('/my-profile', isLoggedIn, async (req, res)=>{
   //Consulto los datos del usuario (con clave) nombre, los combino con la plantilla de perfil de usuario y se lo envio.
   //Nota:Hacer una subrutina, asi puedo usarla tanto para ver el perfil del propio usuario como para ver un perfil ajeno.
-  let plantilla=await rellenarPlantillaConDatos('/home/freddy/Escritorio/majorandminor/user-profile.html', req.user, true);
+  let plantilla=await rellenarPlantillaConDatos(__dirname+'/user-profile.html', req.user, true);
   res.send(plantilla);
 });
 
 app.get('/my-profile-photos', isLoggedIn, async (req, res)=>{
   try{
   	//Verifico que existe el usuario consultando su directorio.
-    let fileHandle=await fs.opendir(`users-photos/${req.user}`);
+    await fs.opendir(`users-photos/${req.user}`);
     //Cuento la cantidad de fotos que tiene el usuario en su directorio, y se retorna un array con las respectivas.
     let fotos=await fs.readdir(`users-photos/${req.user}`);
     //Ahora combino las fotos con la plantilla html.
-    let plantilla=await fs.readFile('/home/freddy/Escritorio/majorandminor/photos.html', 'utf8');
+    let plantilla=await fs.readFile(__dirname+'/photos.html', 'utf8');
     let fotoshtml='', fila='<tr>'; //La fila solo contendra 3 elementos(fotos). Cada vez que una fila se llena, se añade al relleno de la tabla y se crea otra nueva.
     let contadorDeFotos=1;
     let contenidoDeTabla='';
@@ -271,7 +318,6 @@ app.get('/my-profile-photos', isLoggedIn, async (req, res)=>{
           }
       }
     }
-    await fileHandle.close(); //Cierro el directorio para que el recolector de basura no se haga cargo.
     plantilla=plantilla.replace('<!--Fotos-->', contenidoDeTabla);
     res.send(plantilla);
   } catch(err){
@@ -332,14 +378,14 @@ app.put('/change-profile-photo', isLoggedIn, async (req, res)=>{
 
 app.get('/edit-profile', isLoggedIn, (req, res)=>{
   //Envio una nueva plantilla con los datos del usuario organizados para que el los pueda actualizar.
-    res.sendFile('/home/freddy/Escritorio/majorandminor/edit-profile.html');
+    res.sendFile(__dirname+'/edit-profile.html');
 });
 app.put('/edit-profile', isLoggedIn, async (req, res)=>{
   try{
   	let consulta=`UPDATE users SET header='${req.body.encabezado}', bodytype='${req.body.tipoDeCuerpo}', heigth='${req.body.altura}',
   	 ethnicgroup='${req.body.grupoEtnico}', maritalstatus='${req.body.estadoCivil}', sons='${req.body.hijos}', housingsituation='${req.body.
   	 situacionDeVivienda}', educationallevel='${req.body.nivelDeEstudios}', work='${req.body.trabaja}', smokes='${req.body.fuma}', drink='${req.body.bebe}',
-  	 description='${req.body.descripcion}' WHERE userName='${req.user}'`;
+  	 description='${req.body.descripcion}' WHERE username='${req.user}'`;
     await client.query(consulta);
     res.json({message:'Actualizacion exitosa'});
   } catch(err){
@@ -350,9 +396,17 @@ app.put('/edit-profile', isLoggedIn, async (req, res)=>{
 
 app.get('/search', (req, res)=>{
   //Envio junto con todos los usuarios registrados. Luego el usuario decide sus parametros de busqueda.
-  res.sendFile('/home/freddy/Escritorio/majorandminor/search.html');
+  res.sendFile(__dirname+'/search.html');
 });
-app.get('/users', async (req, res)=>{ 
+
+function colocarCirculoOnline(online){
+  if (online){
+    return '<div id="online-circle"></div>';
+  }
+  return '';
+}
+
+app.get('/users', async (req, res)=>{
    /*Consulto el sexo del usuario para luego consultar todos los usuarios del sexo opuesto.
   Los mostrare en filas de 3. Cada perfil de usuario tendra como presentacion su banderita, estado, foto de perfil (avatar si no la tiene),
   su nombre de usuario y su edad. Si el usuario hace click en alguno de los perfiles, ira directamente al perfil indicado con todos 
@@ -362,17 +416,27 @@ app.get('/users', async (req, res)=>{
   solicitante pueda ver el respectivo perfil...*/
   let sexo=await client.query(`SELECT sex FROM users WHERE username='${req.user}'`), perfilesDeUsuarios;
   if (req.query.pais==='Todos los paises'){
-    perfilesDeUsuarios=await client.query(`SELECT * FROM users WHERE sex='${!sexo.rows[0].sex}' AND age<='${req.query.edad}'`);
+  	if (req.query.online!==undefined){
+      perfilesDeUsuarios=await client.query(`SELECT * FROM users WHERE sex='${!sexo.rows[0].sex}' AND age<='${req.query.edad}' AND online=true`);
+  	} else{
+  	  perfilesDeUsuarios=await client.query(`SELECT * FROM users WHERE sex='${!sexo.rows[0].sex}' AND age<='${req.query.edad}'`);
+  	}
   } else{
-    perfilesDeUsuarios=await client.query(`SELECT * FROM users WHERE sex='${!sexo.rows[0].sex}' AND age<='${req.query.edad}'
-    AND country='${req.query.pais}'`);
+  	  if (req.query.online!==undefined){
+  	  	onlineCircle='<div id="online-circle"></div>';
+  	    perfilesDeUsuarios=await client.query(`SELECT * FROM users WHERE sex='${!sexo.rows[0].sex}' AND age<='${req.query.edad}'
+        AND country='${req.query.pais}' AND online=true`);
+  	  } else{
+  	  	perfilesDeUsuarios=await client.query(`SELECT * FROM users WHERE sex='${!sexo.rows[0].sex}' AND age<='${req.query.edad}'
+        AND country='${req.query.pais}'`);
+  	  }
   }
-  let plantilla=await fs.readFile('/home/freddy/Escritorio/majorandminor/search.html', 'utf8');
+  let plantilla=await fs.readFile(__dirname+'/search.html', 'utf8');
   let fila=`<tr>`, datos='', contador=0;
   for (let i=0; i<perfilesDeUsuarios.rows.length; i++){
   	let srcFotoDePerfil=await obtenerFotoPefilUsuario(perfilesDeUsuarios.rows[i].username);
     if (i===perfilesDeUsuarios.rows.length-1){
-      fila+=`<td><a href="/user-profile?userName=${perfilesDeUsuarios.rows[i].username}"><img src="${srcFotoDePerfil}"><p>${perfilesDeUsuarios.rows[i].country}</p><p>${perfilesDeUsuarios.rows[i].username}</p>
+      fila+=`<td><a href="/user-profile?userName=${perfilesDeUsuarios.rows[i].username}"><img src="${srcFotoDePerfil}">${colocarCirculoOnline(perfilesDeUsuarios.rows[i].online)}<p>${perfilesDeUsuarios.rows[i].country}</p><p>${perfilesDeUsuarios.rows[i].username}</p>
       <p>${perfilesDeUsuarios.rows[i].age}</p></a></td>`;
       fila+='</tr>';
       datos+=fila;
@@ -381,11 +445,11 @@ app.get('/users', async (req, res)=>{
       fila+='</tr>';
       datos+=fila;
       fila=`<tr>`;
-      fila+=`<td><a href="/user-profile?userName=${perfilesDeUsuarios.rows[i].username}"><img src="${srcFotoDePerfil}"><p>${perfilesDeUsuarios.rows[i].country}</p><p>${perfilesDeUsuarios.rows[i].username}</p>
+      fila+=`<td><a href="/user-profile?userName=${perfilesDeUsuarios.rows[i].username}"><img src="${srcFotoDePerfil}">${colocarCirculoOnline(perfilesDeUsuarios.rows[i].online)}<p>${perfilesDeUsuarios.rows[i].country}</p><p>${perfilesDeUsuarios.rows[i].username}</p>
       <p>${perfilesDeUsuarios.rows[i].age}</p></a></td>`;
       contador++;
     } else{
-      fila+=`<td><a href="/user-profile?userName=${perfilesDeUsuarios.rows[i].username}"><img src="${srcFotoDePerfil}"><p>${perfilesDeUsuarios.rows[i].country}</p><p>${perfilesDeUsuarios.rows[i].username}</p>
+      fila+=`<td><a href="/user-profile?userName=${perfilesDeUsuarios.rows[i].username}"><img src="${srcFotoDePerfil}">${colocarCirculoOnline(perfilesDeUsuarios.rows[i].online)}<p>${perfilesDeUsuarios.rows[i].country}</p><p>${perfilesDeUsuarios.rows[i].username}</p>
       <p>${perfilesDeUsuarios.rows[i].age}</p></a></td>`;
       contador++;
     }
@@ -401,7 +465,7 @@ app.get('/user-profile', async (req, res)=>{
     Luego, se consulta en la base de datos los datos de ese usuario.
     Los datos de ese usuario se combinan con la plantilla del perfil del usuario solcitado.
     Por ultimo, se envia la plantilla al usuario que hizo la solicitud, mostrandole el perfil correspondiente.*/
-    let plantilla=await rellenarPlantillaConDatos('/home/freddy/Escritorio/majorandminor/user-profile.html', req.query.userName, false);
+    let plantilla=await rellenarPlantillaConDatos(__dirname+'/user-profile.html', req.query.userName, false);
     res.send(plantilla);
 });
 app.get('/other-user-profile-photos', async (req, res)=>{
@@ -409,11 +473,11 @@ app.get('/other-user-profile-photos', async (req, res)=>{
   del usuario consultado*/
   try{
   	//Verifico que existe el usuario consultando su directorio.
-    let fileHandle=await fs.opendir(`users-photos/${req.query.userName}`);
+    await fs.opendir(`users-photos/${req.query.userName}`);
     //Cuento la cantidad de fotos que tiene el usuario en su directorio, y se retorna un array con las respectivas.
     let fotos=await fs.readdir(`users-photos/${req.query.userName}`);
     //Ahora combino las fotos con la plantilla html.
-    let plantilla=await fs.readFile('/home/freddy/Escritorio/majorandminor/photos.html', 'utf8');
+    let plantilla=await fs.readFile(__dirname+'/photos.html', 'utf8');
     let fotoshtml='', fila='<tr>'; //La fila solo contendra 3 elementos(fotos). Cada vez que una fila se llena, se añade al relleno de la tabla y se crea otra nueva.
     let contadorDeFotos=1;
     let contenidoDeTabla='';
@@ -436,7 +500,6 @@ app.get('/other-user-profile-photos', async (req, res)=>{
           }
       }
     }
-    await fileHandle.close(); //Cierro el directorio para que el recolector de basura no se haga cargo.
     plantilla=plantilla.replace('<!--Fotos-->', contenidoDeTabla);
     res.send(plantilla);
   } catch(err){
@@ -487,15 +550,19 @@ app.get('/chat-interface', async (req, res)=>{
   la plantilla  de interfaz de chat, cada uno en formato fila y como link.*/
   let chatFiles=await fs.readdir('chats');
   let results=getChatFilesUserAndTheOtherUsername(chatFiles, req.user);
-  let profilePhotosOtherUsers=[], lastChatMessages=[], content='';
+  let profilePhotosOtherUsers=[], lastChatMessages=[], online=[], content='';
   for (let i=0; i<results.length; i++){
+  	/*Aparte de las fotos y el ultimo mensaje de chat, aprovechare de obtener si el usuario esta online o no, para
+  	poner o no el respectivo circulito :p*/
+  	let isOnline=await client.query(`SELECT online FROM users WHERE username='${results[i][1]}'`);
+  	online.push(colocarCirculoOnline(isOnline.rows[0].online));
     profilePhotosOtherUsers.push(await obtenerFotoPefilUsuario(results[i][1]));
     lastChatMessages.push(await readLastLines.read(`chats/${results[i][0]}`, 1));
   }
-  let plantilla=await fs.readFile('/home/freddy/Escritorio/majorandminor/chat-interface.html', 'utf8');
+  let plantilla=await fs.readFile(__dirname+'/chat-interface.html', 'utf8');
   for (let j=0; j<results.length; j++){
-    content+=`<tr><td><a href="chat?userName=${results[j][1]}"><img src="${profilePhotosOtherUsers[j]}"><p>${results[j][1]}
-    </p><p>${lastChatMessages[j]}</p></a></td></tr>`;
+    content+=`<tr><td><a href="chat?userName=${results[j][1]}">${online[j]}<img src="${profilePhotosOtherUsers[j]}"><p>${results[j][1]}
+    </p>${lastChatMessages[j]}</a></td></tr>`;
   }
   plantilla=plantilla.replace('<!--#Chat with other users-->', content);
   res.send(plantilla);
@@ -512,8 +579,11 @@ app.get('/chat', async (req, res)=>{
   Fin
   */
   let profilePhoto=await obtenerFotoPefilUsuario(req.query.userName);
-  let plantilla=await fs.readFile('/home/freddy/Escritorio/majorandminor/chat.html', 'utf8');
+  let plantilla=await fs.readFile(__dirname+'/chat.html', 'utf8');
   plantilla=plantilla.replace('<!--#profilePhoto-->', `<img src="${profilePhoto}">`);
+  //Aparte de los datos importantes, tambien consultare si el usuario esta online para poner o no el circulito respectivo :p
+  let online=await client.query(`SELECT online FROM users WHERE username='${req.query.userName}'`);
+  plantilla=plantilla.replace('<!--online-->', colocarCirculoOnline(online.rows[0].online));
   plantilla=plantilla.replace('<!--#username-->', `<p>${req.query.userName}</p>`);
   plantilla=plantilla.replace('<!--hide-->', `<div id="${req.user}"></div>`); /*Este div sin contenido solo se encargara
   de guardar el nombre del usuario como id para poder expresar el emisor de cada mensaje.*/
@@ -538,8 +608,13 @@ function getUsernameFromMsg(message){
   return username;
 }
 io.on('connection', (socket) => {
-  console.log('a user connected');
   socket.on('chat message', async (msg) => {
+  	/*Antes de emitir el mensaje, debo asegurarme de que no sea codigo javascript, por lo que limpiare el mensaje con el
+  	siguiente codigo:*/
+  	while (msg[0].includes('<script>') || msg[0].includes('</script>')){
+  	  msg[0]=msg[0].replace('<script>', '');
+  	  msg[0]=msg[0].replace('</script>', '');
+  	}
     io.emit('chat message', msg);
     let resultChatFile=await readChatFile(getUsernameFromMsg(msg[0]), msg[1], false);
     if (resultChatFile!==''){
@@ -550,10 +625,58 @@ io.on('connection', (socket) => {
       }
     }
   });
-  socket.on('disconnect', () => {
-    console.log('user disconnected');
-    io.emit('user-disconnect', 'Un usuario se ha desconectado');
-  });
+});
+
+app.get('/account-settings', (req, res)=>{
+  res.sendFile(__dirname+'/account-settings.html');
+});
+
+app.get('/delete-account', (req, res)=>{
+  res.sendFile(__dirname+'/delete-account.html');
+});
+
+app.delete('/delete-account', async (req, res)=>{
+  try{
+    let message;
+    let result=await client.query(`DELETE FROM users WHERE username='${req.user}' AND password='${req.body.password}'`);
+    if (result.rowCount===1){
+      message={message: 'Successful operation'};
+      let userPhotos=await fs.readdir(`users-photos/${req.user}`);
+      if (userPhotos.length>0){
+        for (let i=0; i<userPhotos.length; i++){
+          await fs.unlink(`users-photos/${req.user}/${userPhotos[i]}`);
+        }
+      }
+    } else if (result.rowCount===0){
+      message={message: 'Error'};
+    }
+    res.json(message);
+  } catch(err){
+    res.json({message: 'Error'});
+  }
+});
+
+app.get('/change-password', isLoggedIn, (req, res)=>{
+  res.sendFile(__dirname+'/change-password.html');
+});
+
+app.put('/change-password', isLoggedIn, (req, res)=>{
+  try{
+  	bcrypt.genSalt(saltRounds, (err, salt)=>{
+  	  if (err){
+  	  	return res.json({message: 'Error'});
+  	  } 
+      bcrypt.hash(req.body.password, salt, async (err, hash)=>{
+        if (err){
+          return res.json({message: 'Error'});
+        }
+        await client.query(`UPDATE users SET password='${hash}' WHERE username='${req.user}'`);
+        res.json({message: 'Successful operation'});
+      });
+    });
+  } catch(err){
+  	res.json({message: 'Error'});
+  }
 });
 
 http.listen(port, '0.0.0.0', ()=>{

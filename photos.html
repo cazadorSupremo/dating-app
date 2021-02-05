@@ -31,13 +31,6 @@
 </head>
 
 <body>
-
-<!--Vista en cuadricula/tabla de las fotos del usuario con sus respectivos botones de borrado + un boton de subida
-al final-->
-<!--Me pregunto... si en reealidad seria mejor agregar un boton de eliminacion general, y cuando sea pulsado,
-	el usuario pueda marcar con una casilla cada foto que desea borrar, asi no tendria un exceso de botones de 
-	eliminacion... si, creo que es una mejor opcion de diseño-->
-
 <nav aria-label="breadcrumb">
   <ol class="breadcrumb">
     <li class="breadcrumb-item"><a href="search">Busqueda</a></li>
@@ -62,10 +55,7 @@ al final-->
 </script>
 <script>
   /*Este script servira para usar la libreria croppie con el fin de hacer que el usuario recorte la foto que va a subir
-  con las dimensiones especificadas
-  Estoy teniendo problemas con la calidad... me pregunto si esto lo podria resolver haciendo enviandole un
-  mensaje a los usuarios para que envien una foto de una dimension a<=x<=b donde x es la dimension elegida, a
-  la dimension menor aceptada y b la dimension mayor aceptada.*/
+  con las dimensiones especificadas*/
   let photo=document.getElementById('photo');
   photo.addEventListener('change', ()=>{
     let objectURL=URL.createObjectURL(photo.files[0]);
@@ -127,7 +117,6 @@ al final-->
   /*Seleccion de foto de perfil y borrado de fotos.*/
     function formatearSrc(src){ //Esta funcion se encarga de formatear el src de las imagenes con el fin de enviar solo el nombre de la imagen.
     //El nombre esta despues del primer '/'
-    console.log(src);
     let name='', contador=0;
     for (let i=0; i<src.length; i++){
       if (src[i]==='/'){

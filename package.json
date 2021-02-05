@@ -11,6 +11,7 @@
     "nodemon": "^2.0.6"
   },
   "dependencies": {
+    "bcrypt": "^5.0.0",
     "bootstrap": "^5.0.0-beta1",
     "croppie": "^2.6.5",
     "express": "^4.17.1",

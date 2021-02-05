@@ -1,2 +1,0 @@
-Es sencillo. Cuando el usuario inicie sesion(login), se actualiza el estado online a true(1) en la base de datos.
-Cuando el usuario salga (logout) se actualiza el estado online a false(0).
