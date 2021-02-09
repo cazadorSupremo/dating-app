@@ -7,7 +7,7 @@
   <title></title>
   <style>
     body{
-      background-image:url('front-image.jpg');
+      background-image:url('/front-image.jpg');
       background-attachment:fixed;
       background-repeat: no-repeat;
       background-size: cover;
@@ -182,8 +182,7 @@
       bebe: verficarValorElegidoDeBotonesDeRadio(document.getElementsByName('bebes')),
       descripcion: document.getElementById('descripcion').value 
     };
-    let actualizacionDeDatos=await fetch('/edit-profile', {method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify
-    (datosActualizados)});
+    let actualizacionDeDatos=await fetch('/my-profile/edit-profile', {method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(datosActualizados)});
     let mensaje=await actualizacionDeDatos.json();
     if (mensaje.message==='Actualizacion exitosa'){
       alert('Actualizacion exitosa');

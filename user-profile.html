@@ -11,7 +11,7 @@
       height: auto;
     }
     body{
-      background-image:url('front-image.jpg');
+      background-image:url('/front-image.jpg');
       background-attachment:fixed;
       background-repeat: no-repeat;
       background-size: cover;
@@ -102,7 +102,7 @@
   //Este script se ejecutara si el perfil es de un usuario ajeno.
   let linkPhotos=document.getElementById('photos');
   let userName=document.getElementById('userName');
-  linkPhotos.href=`other-user-profile-photos?userName=${userName.textContent}`;
+  linkPhotos.href=`/search/users/user-profile/photos?userName=${userName.textContent}`;
   let chat=document.getElementById('chat');
   chat.href=`chat?userName=${userName.textContent}`;
 </script>

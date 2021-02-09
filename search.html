@@ -11,7 +11,7 @@
       height: auto;
     }
     body{
-      background-image:url('front-image.jpg');
+      background-image:url('/front-image.jpg');
       background-attachment:fixed;
       background-repeat: no-repeat;
       background-size: cover;
@@ -39,7 +39,7 @@
     <li class="breadcrumb-item"><a href="/logout">Salir</a></li>
   </ol>
 </nav>
-<form action="/users" method="get">
+<form action="/search/users" method="get">
 <label for="customRange1">Rango de edad</label>
 <input type="range" class="form-range" id="age" name='edad' min="35" max="90" step="1" onchange="updateAge(this.value);">
 <p id="valorEdad"></p>
