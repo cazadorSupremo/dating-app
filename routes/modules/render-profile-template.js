@@ -26,7 +26,7 @@ module.exports.renderProfileTemplate=async (templatePath, userID, requestingUser
       template=template.replace('<!--editar perfil o chat-->', '<a href="/my-profile/edit-profile">Editar perfil</a>');
     } else{
       template=template.replace('<!--Fotos del mismo o fotos de otro usuario-->', '<a id="photos" href="/search/users/user-profile/photos">Fotos</a>');
-      template=template.replace('<!--editar perfil o chat-->', '<a id="chat" href="chat">Mensaje</a>');
+      template=template.replace('<!--editar perfil o chat-->', '<a id="chat" href="/chat-interface/chat">Mensaje</a>');
     }
     let result=await client.query(`SELECT * FROM users WHERE username='${userID}'`);
     template=template.replace('foto de perfil', srcProfilePhoto);

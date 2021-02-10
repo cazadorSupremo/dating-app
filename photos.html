@@ -32,10 +32,10 @@
 <body>
 <nav aria-label="breadcrumb">
   <ol class="breadcrumb">
-    <li class="breadcrumb-item"><a href="search">Busqueda</a></li>
-    <li class="breadcrumb-item"><a href="chat-interface">Chat</a></li>
+    <li class="breadcrumb-item"><a href="/search">Busqueda</a></li>
+    <li class="breadcrumb-item"><a href="/chat-interface">Chat</a></li>
     <li class="breadcrumb-item"><a href="/my-profile">Mi perfil</a></li>
-    <li class="breadcrumb-item"><a href="#">Configuracion de la cuenta</a></li>
+    <li class="breadcrumb-item"><a href="/account-settings">Configuracion de la cuenta</a></li>
     <li class="breadcrumb-item"><a href="/logout">Salir</a></li>
   </ol>
 </nav>
@@ -80,7 +80,7 @@
     cancelar.style.top='20px';
     cancelar.style.left='700px';
     //cancelar.id='cancel-photo';
-    cancelar.href='/my-profile-photos';
+    cancelar.href='/my-profile/photos';
     cancelar.style.color='red';
     document.querySelector('body').appendChild(enviarFoto);
     document.querySelector('body').appendChild(cancelar);
