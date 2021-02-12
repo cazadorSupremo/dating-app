@@ -55,9 +55,9 @@
   </ol>
 </nav>
 <!--#profilePhoto-->
-<!--online-->
 <!--#username-->
 <!--hide-->
+<!--online-->
     <ul id="messages">
       <!--messages-->
     </ul>
@@ -67,20 +67,23 @@
     <script src="/socket.io/socket.io.js"></script>
     <script>
       var socket=io();
+      socket.on('connect', ()=>{
+        socket.emit('user online', [document.querySelector('div').id, document.querySelector('p').textContent]);
+      });
       var messages=document.getElementById('messages');
       var form=document.getElementById('form');
       var input=document.getElementById('input');
 
-      form.addEventListener('submit', function(e) {
+      form.addEventListener('submit', e=>{
         e.preventDefault();
         if (input.value) {
-          //Envio un array con el mensaje del usuario como primer elemento y el usuario destinataro con el segundo.
+          //Envio un array con el mensaje del usuario como primer elemento y el usuario destinatario con el segundo.
           socket.emit('chat message', [`${document.querySelector('div').id}: ${input.value}`, document.querySelector('p').textContent]); 
           input.value='';
         }
       });
       
-      socket.on('chat message', (msg)=>{
+      socket.on('chat message', msg=>{
         var item=document.createElement('li');
         item.textContent=msg[0];
         messages.appendChild(item);

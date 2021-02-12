@@ -11,6 +11,9 @@ const client=new Client({
 client.connect();
 const onlineCircle=require('./paste-circle-online.js');
 const read_chat_file=require('./read-chat-file.js');
+const lineReader=require('line-reader');
+const lineReplace=require('line-replace');
+
 exports.chatBetweenUsers=async (req, res)=>{
    /*Entonces, el proceso es el siguiente:
   Primero obtengo la foto de perfil del usuario. 
@@ -26,10 +29,10 @@ exports.chatBetweenUsers=async (req, res)=>{
   plantilla=plantilla.replace('<!--#profilePhoto-->', `<img src="${profilePhoto}">`);
   //Aparte de los datos importantes, tambien consultare si el usuario esta online para poner o no el circulito respectivo :p
   let online=await client.query(`SELECT online FROM users WHERE username='${req.query.userName}'`);
-  plantilla=plantilla.replace('<!--online-->', onlineCircle.pasteCircleOnline(online.rows[0].online));
   plantilla=plantilla.replace('<!--#username-->', `<p>${req.query.userName}</p>`);
   plantilla=plantilla.replace('<!--hide-->', `<div id="${req.user}"></div>`); /*Este div sin contenido solo se encargara
   de guardar el nombre del usuario como id para poder expresar el emisor de cada mensaje.*/
+  plantilla=plantilla.replace('<!--online-->', onlineCircle.pasteCircleOnline(online.rows[0].online));
   let resultChatFile=await read_chat_file.readChatFile(req.user, req.query.userName, true);
   if (resultChatFile!=='X'){
     plantilla=plantilla.replace('<!--messages-->', resultChatFile);
@@ -40,5 +43,23 @@ exports.chatBetweenUsers=async (req, res)=>{
       console.log('Ha ocurrido un error al momento de crear un archivo de chat.');
     }
   }
+   /*Debo modificar esta codigo con el fin de borrar (si los hay) los mensajes no vistos.
+  Sera facil, simplemente debo ubicar el archivo de nuevos usuarios del usuario solicitante, y, sustitur 
+  la correspondiente linea del usuario emisor, con la nueva linea, que contendra 0 como la cantidad de nuevos 
+  mensajes. Fin*/
+  let lineCount=1;
+  lineReader.eachLine(`./chats/new-messages/${req.user}.txt`, (line, last)=>{
+    if (line.includes(req.query.userName)){
+      lineReplace({
+        file: `./chats/new-messages/${req.user}.txt`,
+        line: lineCount,
+        text: `${req.query.userName} : 0\n`,
+        addNewLine: false,
+        callback: ({ file, line, text, replacedText, error }) => {}
+      });
+      return false; // stop reading
+    }
+    lineCount++;
+  });
   res.send(plantilla);
 }
