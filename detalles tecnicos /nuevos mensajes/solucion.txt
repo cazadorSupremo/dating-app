@@ -1,0 +1,41 @@
+¿Como verificar que un usuario i esta conectado en el chat con otro usuario j (sin que el usuario j
+necesariamente deba estar conectado)?
+Hago una tabla. Esta tabla tendra n filas y dos columnas. Esta tabla tendra una correspondencia entre dos usuarios.
+El usuario i estara conectado con algun otro usuario (representado por x). Cuando un usuario se conecte a cualquier
+chat, se agregara a la tabla ese usuario + el otro usuario con el que va a chatear. El otro usuario no necesariamente debe estar
+conectado. Ambos usuarios estaran conectados entre si (en el mismo chat) si en la tabla existen dos fila de la forma:
+usuarioA-usuarioB
+usuarioB-usuarioA
+
+
+usuario1  x
+usuario2  x
+usuario3  x
+usuario4  x
+...
+usuarioN  x
+
+Cuando un usuario i que este chateando con un usuario j se desconecte, se borrara de la tabla la fila:
+usuario i-usuario j
+
+Entonces, te preguntaras, como resuelve esto la notificacion de los nuevos mensajes?
+Sencillo, pero para eso tienes que tener en cuenta que dentro de la carpeta de chat, existe otra carpeta llamada
+"new-messages". Lee la descripcion. Una vez hecho esto, te explicare como funcionara:
+Si un usuario a envia un mensaje a otro usuario b, se verifica la tabla de usuarios conectados al chat. Pueden suceder tres cosas:
+La primera, es que el usuario b este conectado al mismo chat del usuario a, es decir, se cumple la condicion logica siguiente:
+usuario a-usuario b Y usuario b-usuario a existan en la tabla. En este caso, no se hace nada.
+-La segunda, es que el usuario b no este conectado con el usuario a, pero si este conectado con otro usuario x, es decir, se cumple
+la condicion logica siguiente:
+usuario a-usuario b Y usuario b-usuario x existan en la tabla. En este caso, la aplicacion procedera de la siguiente manera:
+Se consulta el archivo de new-messages del usuario b. Se localiza la linea que corresponde al usuario a en ese
+archivo. Si no existe, se crea. 
+Luego, se suma 1 a la cantidad presente de nuevos mensajes en la linea del usuario a (si no hay, entonces solo se suma/escribe 1).
+Fin
+-La segunda, es que el usuario b no este conectado con ningun usuario, es decir, se cumple la siguiente condicion logica:
+usuario a-usuario b Y no exista usuario b-otro usuario en la tabla. En este caso se procede de la misma manera
+que en la situacion dos.
+
+Y asi amigo mio, resuelvo el problema de la notificacion de los nuevos mensajes, claro que los detalles se encuentran en el codigo,
+pero asi es el proceso general. Tambien hay que destacar que si un usuario a se conecta al chat con el usuario b, 
+automaticamente se debe revisar si existen nuevos mensajes en el archivo new messages del usuario a con el usuario b. 
+Si existen, se borran, y si no existen, no se hace nada :p

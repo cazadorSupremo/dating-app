@@ -1,0 +1,11 @@
+Para empezar, necesito implementar socket.io en la interfaz de chat. Entonces
+funcionara de la siguiente manera:
+Cada vez que un otro usuario envie un mensaje, ese mensaje llegara a la interfaz de chat
+y actualizara el chat con ese otro usuario anexando el mensaje e, incrementando el contador de mensajes 
+no vistos en 1, que se representara como un numero blanco encerrado en un mini circulo rojo anexado a la correspondiente
+barra de chat.
+
+mensajes no vistos por usuario A
+mensajes no vistos por usuario B
+
+<!-- -->

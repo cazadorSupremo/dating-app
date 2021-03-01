@@ -1,2 +1,0 @@
-Los archivos que contendran los mensajes de chat de los usuarios, tendran como nombre
-"usuarioA-UsuarioB" o "usuarioB-UsuarioA" dependiendo de cual de los usuarios inicie el chat.

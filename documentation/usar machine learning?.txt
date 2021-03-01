@@ -1,4 +1,0 @@
-Si un usuario de cierto sexo sube una foto, se supone que debe ser una foto de una persona del sexo 
-del usuario. Podria usar machine learning para clasificar las fotos subidas por el usuario.
-Si no es la adecuada, entonces se rechaza.
-Tambien podria usarlo para evitar fotos vulgares (desnudos, porno, etc).

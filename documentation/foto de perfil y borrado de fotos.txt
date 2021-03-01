@@ -1,5 +1,0 @@
-cada boton "..." tendra un id tipo "boton1", "boton2", "boton3"..."botonN"
-y cada foto del usuario tendra un id tipo "foto1", "foto2"; "foto3"..."fotoN"
-Entonces, cuando el usuario presione algun boton, y seleccione una de las opciones del menu desplegable,
-se seleccionara la imagen con el numero del id del mismo boton.
-Luego se enviara el src de tal imagen, para ser colocada como foto de perfil, o , para ser eliminada.

@@ -52,11 +52,4 @@ router.get('/logout', async (req, res)=>{
   res.redirect("/");
 });
 
-router.get('/ToS', (req, res)=>{
-  res.sendFile(htmlFilePath+'/ToS-and-privacy-policy/ToS.html');
-});
-router.get('/privacy-policy', (req, res)=>{
-  res.sendFile(htmlFilePath+'/ToS-and-privacy-policy/privacy-policy.html');
-});
-
 module.exports=router;

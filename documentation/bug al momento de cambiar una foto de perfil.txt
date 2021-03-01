@@ -1,3 +1,0 @@
-Cuando intento cambiar una foto de perfil, y luego selecciono la misma foto de perfil que habia cambiado
-para ser nuevamente la foto de perfil, ocurre un error. Esto es porque vista no se actualiza, y la foto de perfil
-que original todavia tiene el src con la etiqueta. Debo solucionar esto.

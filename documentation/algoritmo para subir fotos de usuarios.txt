@@ -1,7 +1,0 @@
-Inicio.
--El usuario sube su foto.
--El servidor, por medio del paquete multer, recibe la foto, y tambien, el id de usuario (nombre de usuario).
--La aplicacion se dirige al directorio de fotos, y, si el usuario todavia no ha subido fotos, crea su propio directorio 
-cuyo nombre sera el id del usuario. Si ya existe el directorio, entonces se busca.
--Una vez dentro del directorio, se añade la nueva foto.
-Fin

@@ -29,7 +29,37 @@
     <li class="breadcrumb-item"><a href="/logout">Salir</a></li>
   </ol>
 </nav>
-<a href="/account-settings/delete-account">Delete account</a>
-<a href="/account-settings/change-password">Change password</a>
+
+<!--<a href="/account-settings/delete-account">Delete account</a>
+<a href="/account-settings/change-password">Change password</a>-->
+<p>¿Deseas cambiar tu contraseña?</p>
+ <label>Nueva contraseña</label>
+ <input type="text" name="newPassword" id="newPassword">
+ <label>Repite la contraseña</label>
+ <input type="text" id="repeatPassword">
+ <button id="confirmNewPassword" class="btn btn-light">Confirmar cambio de contraseña</button>
+ <br> <br> <br> <br>
+<p>¿Deseas borrar tu cuenta?</p>
+ <label>Introduce la contraseña para borrar tu cuenta</label>
+ <input type="text" name="password" id="password">
+ <button id="confirmDeleteAccount" class="btn btn-light">Confirmar borrado de cuenta</button>
 </body>
+
+<script>
+  function changePasswordOrDeleteAccount(idAction, idPassword, httpMethod, route){
+    let action=document.getElementById(idAction);
+    action.addEventListener('click', async ()=>{
+      let password=document.getElementById(idPassword).value, data={password: password};
+      let request=await fetch(route, {method: httpMethod, headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)});
+      let respone=await request.json();
+      if (respone.message==='Successful operation'){
+        alert('Operacion exitosa!');
+      } else{
+        alert('Ha ocurrido un error. Intentelo de nuevo.');
+      }
+    });
+  }
+  changePasswordOrDeleteAccount('confirmNewPassword', 'newPassword', 'PUT', '/account-settings/change-password');
+  changePasswordOrDeleteAccount('confirmDeleteAccount', 'password', 'DELETE', '/account-settings/delete-account');
+</script>
 </html>

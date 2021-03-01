@@ -1,0 +1,12 @@
+user1.txt
+  useri : x new messages
+  useri+1: x new messages
+  useri+2: x new messages
+  ... 
+
+user2.txt
+  useri : x new messages
+  useri+1: x new messages
+  useri+2: x new messages
+  ...
+...
